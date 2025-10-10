@@ -24,15 +24,15 @@ import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Item
 import com.ifpr.androidapptemplate.databinding.FragmentDashboardBinding
 
-
 class DashboardFragment : Fragment() {
 
     private var _binding: FragmentDashboardBinding? = null
 
     private lateinit var enderecoEditText: EditText
+    private lateinit var descricaoEditText: EditText
+    private lateinit var tipoEmergenciaEditText: EditText
     private lateinit var itemImageView: ImageView
     private var imageUri: Uri? = null
-
 
     //TODO("Declare aqui as outras variaveis do tipo EditText que foram inseridas no layout")
     private lateinit var salvarButton: Button
@@ -67,8 +67,8 @@ class DashboardFragment : Fragment() {
         salvarButton = view.findViewById(R.id.salvarItemButton)
         selectImageButton = view.findViewById(R.id.button_select_image)
         enderecoEditText = view.findViewById(R.id.enderecoItemEditText)
-        //TODO("Capture aqui os outro campos que foram inseridos no layout. Por exemplo, ate
-        // o momento so foi capturado o endereco (EditText)")
+        descricaoEditText = view.findViewById(R.id.editDescricao)
+        tipoEmergenciaEditText = view.findViewById(R.id.editTipoEmergencia)
 
         auth = FirebaseAuth.getInstance()
 
@@ -96,19 +96,19 @@ class DashboardFragment : Fragment() {
     }
 
     private fun salvarItem() {
-        //TODO("Capture aqui o conteudo que esta nos outros editTexts que foram criados")
         val endereco = enderecoEditText.text.toString().trim()
+        val descricao = descricaoEditText.text.toString().trim()
+        val tipoEmergencia = tipoEmergenciaEditText.text.toString().trim()
 
-        if (endereco.isEmpty() || imageUri == null) {
+        if (endereco.isEmpty() || descricao.isEmpty() || tipoEmergencia.isEmpty() || imageUri == null) {
             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT)
                 .show()
             return
         }
-        uploadImageToFirestore()
+        uploadImageToFirestore(endereco, descricao, tipoEmergencia)
     }
 
-
-    private fun uploadImageToFirestore() {
+    private fun uploadImageToFirestore(endereco: String, descricao: String, tipoEmergencia: String) {
         if (imageUri != null) {
             val inputStream = context?.contentResolver?.openInputStream(imageUri!!)
             val bytes = inputStream?.readBytes()
@@ -116,17 +116,17 @@ class DashboardFragment : Fragment() {
 
             if (bytes != null) {
                 val base64Image = Base64.encodeToString(bytes, Base64.DEFAULT)
-                val endereco = enderecoEditText.text.toString().trim()
-                //TODO("Capture aqui o conteudo que esta nos outros editTexts que foram criados")
-
-                val item = Item(endereco, base64Image)
+                val item = Item(
+                    endereco = endereco,
+                    base64Image = base64Image,
+                    tipoEmergencia = tipoEmergencia,
+                    descricao = descricao
+                )
 
                 saveItemIntoDatabase(item)
             }
         }
     }
-
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -139,11 +139,8 @@ class DashboardFragment : Fragment() {
     }
 
     private fun saveItemIntoDatabase(item: Item) {
-        //TODO("Altere a raiz que sera criada no seu banco de dados do realtime database.
-        // Renomeie a raiz itens")
-        databaseReference = FirebaseDatabase.getInstance().getReference("itens")
+        databaseReference = FirebaseDatabase.getInstance().getReference("situacoesEmergencia")
 
-        // Cria uma chave unica para o novo item
         val itemId = databaseReference.push().key
         if (itemId != null) {
             databaseReference.child(auth.uid.toString()).child(itemId).setValue(item)
