@@ -48,6 +48,13 @@ class HomeFragment : Fragment() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
+    private var lastLocation: Location? = null
+    private var totalDistance = 0f
+    private var isTracking = false
+    private lateinit var distanceTextView: TextView
+    private lateinit var startButton: Button
+    private lateinit var stopButton: Button
+
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -63,6 +70,24 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
+
+        distanceTextView = view.findViewById(R.id.tvDistanceTraveled)
+        startButton = view.findViewById(R.id.btnStartTracking)
+        stopButton = view.findViewById(R.id.btnStopTracking)
+
+        startButton.setOnClickListener {
+            totalDistance = 0f
+            lastLocation = null
+            isTracking = true
+            distanceTextView.text = "Distância percorrida: 0.00 km"
+            Toast.makeText(context, "Caminhada iniciada!", Toast.LENGTH_SHORT).show()
+        }
+
+        stopButton.setOnClickListener {
+            isTracking = false
+            Toast.makeText(context, "Caminhada finalizada!", Toast.LENGTH_SHORT).show()
+        }
+
 
         inicializaGerenciamentoLocalizacao(view)
 
@@ -136,16 +161,30 @@ class HomeFragment : Fragment() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     displayAddress(location)
+
+                    if (isTracking) {
+                        if (lastLocation != null) {
+                            val distance = lastLocation!!.distanceTo(location)
+                            totalDistance += distance
+
+                            val distanceInKm = totalDistance / 1000
+
+                            distanceTextView.text = String.format(
+                                Locale.getDefault(),
+                                "Distância percorrida: %.2f km",
+                                distanceInKm
+                            )
+                        }
+
+                        lastLocation = location
+                    }
                 }
             }
         }
 
-        locationRequest = LocationRequest.create().apply {
-            interval = 30000 // Intervalo em milissegundos para atualizacoes de localizacao
-            fastestInterval =
-                30000 // O menor intervalo de tempo para receber atualizacoes de localizacao
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
+            .setMinUpdateIntervalMillis(3000L)
+            .build()
 
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
