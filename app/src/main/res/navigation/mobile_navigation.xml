@@ -12,6 +12,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/nav_tarefas"
+        android:name="com.ifpr.androidapptemplate.ui.tarefas.ListaTarefaFragment"
+        android:label="@string/tarefa_fragment_label"
+        tools:layout="@layout/fragment_task_list" />
+
+    <fragment
         android:id="@+id/navigation_dashboard"
         android:name="com.ifpr.androidapptemplate.ui.dashboard.DashboardFragment"
         android:label="@string/title_dashboard"
