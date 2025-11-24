@@ -10,14 +10,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
 
+
 interface TarefaAcoesListener {
     fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean)
 }
 
-class TarefaAdapter(private val listener: TarefaAcoesListener) :
-    RecyclerView.Adapter<TarefaAdapter.TarefaViewHolder>() {
+typealias OnTarefaClickListener = (Tarefa) -> Unit
 
-    private var listaTarefas: List<Tarefa> = emptyList()
+class TarefaAdapter(
+    private val listener: TarefaAcoesListener,
+    private val clickListener: OnTarefaClickListener
+) : RecyclerView.Adapter<TarefaAdapter.TarefaViewHolder>() {
+
+    var listaTarefas: List<Tarefa> = emptyList()
 
     class TarefaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val descricao: TextView = itemView.findViewById(R.id.text_tarefa_descricao)
@@ -37,11 +42,14 @@ class TarefaAdapter(private val listener: TarefaAcoesListener) :
 
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
         holder.checkboxConcluida.isChecked = tarefaAtual.concluida
-
         aplicarEstiloTexto(holder.descricao, tarefaAtual.concluida)
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             listener.onStatusAlterado(tarefaAtual, estaConcluida)
+        }
+
+        holder.itemView.setOnClickListener {
+            clickListener(tarefaAtual)
         }
     }
 

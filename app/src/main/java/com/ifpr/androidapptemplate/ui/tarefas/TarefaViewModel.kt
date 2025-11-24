@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.google.firebase.database.*
 import com.google.firebase.auth.FirebaseAuth
+import android.util.Log
 
 class TarefaViewModel : ViewModel() {
 
@@ -15,7 +16,7 @@ class TarefaViewModel : ViewModel() {
     private val databaseRef: DatabaseReference? = currentUserId?.let { uid ->
         FirebaseDatabase.getInstance().getReference("users")
             .child(uid)
-            .child("tarefas") // <-- Nó de tarefas dentro do usuário
+            .child("tarefas")
     }
 
     private val _listaTarefas = MutableLiveData<List<Tarefa>>()
@@ -32,6 +33,7 @@ class TarefaViewModel : ViewModel() {
         }
 
         override fun onCancelled(error: DatabaseError) {
+            Log.e("TarefaViewModel", "Falha na leitura do Firebase: ${error.message}")
         }
     }
 
@@ -67,6 +69,18 @@ class TarefaViewModel : ViewModel() {
     fun deletarTarefa(tarefa: Tarefa) {
         if (databaseRef != null && tarefa.id != null) {
             databaseRef.child(tarefa.id!!).removeValue()
+        }
+    }
+
+    fun atualizarDescricaoTarefa(tarefa: Tarefa) {
+        if (databaseRef != null && tarefa.id != null) {
+            val updates = hashMapOf<String, Any>(
+                "descricao" to tarefa.descricao
+            )
+
+            databaseRef.child(tarefa.id!!).updateChildren(updates)
+        } else {
+            Log.w("TarefaViewModel", "Não foi possível atualizar a descrição: Referência nula ou ID da tarefa ausente.")
         }
     }
 }
