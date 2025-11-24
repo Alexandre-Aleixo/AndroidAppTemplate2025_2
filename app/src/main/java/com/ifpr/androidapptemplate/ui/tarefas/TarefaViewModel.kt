@@ -22,6 +22,8 @@ class TarefaViewModel : ViewModel() {
     private val _listaTarefas = MutableLiveData<List<Tarefa>>()
     val listaTarefas: LiveData<List<Tarefa>> = _listaTarefas
 
+    private var _ordenacaoAtual = OpcaoOrdenacao.STATUS
+
     private val valueEventListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             val tarefas = mutableListOf<Tarefa>()
@@ -32,7 +34,7 @@ class TarefaViewModel : ViewModel() {
                     tarefas.add(tarefaComId)
                 }
             }
-            _listaTarefas.value = tarefas.sortedBy { it.concluida }
+            _listaTarefas.value = aplicarOrdenacao(tarefas, _ordenacaoAtual)
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -50,6 +52,26 @@ class TarefaViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         databaseRef?.removeEventListener(valueEventListener)
+    }
+
+    fun setOrdenacao(novaOpcao: OpcaoOrdenacao) {
+        if (novaOpcao != _ordenacaoAtual) {
+            _ordenacaoAtual = novaOpcao
+            _listaTarefas.value?.let {
+                _listaTarefas.value = aplicarOrdenacao(it, novaOpcao)
+            }
+        }
+    }
+
+    private fun aplicarOrdenacao(lista: List<Tarefa>, opcao: OpcaoOrdenacao): List<Tarefa> {
+        return when (opcao) {
+            OpcaoOrdenacao.STATUS -> lista.sortedWith(
+                compareBy<Tarefa> { it.concluida }
+                    .thenByDescending { it.id }
+            )
+            OpcaoOrdenacao.ALFABETICA -> lista.sortedBy { it.descricao.toLowerCase() }
+            OpcaoOrdenacao.MAIS_RECENTE -> lista.sortedByDescending { it.id }
+        }
     }
 
     fun adicionarNovaTarefa(tarefa: Tarefa) {

@@ -11,6 +11,8 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.PopupMenu
+import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -31,6 +33,8 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     private lateinit var fabAdicionarTarefa: FloatingActionButton
     private lateinit var emptyStateContainer: LinearLayout
 
+    private var btnOrdenar: ImageButton? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -44,11 +48,16 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         recyclerView = view.findViewById(R.id.recycler_view_tarefas)
         fabAdicionarTarefa = view.findViewById(R.id.fab_adicionar_tarefa)
         emptyStateContainer = view.findViewById(R.id.empty_state_container)
+        btnOrdenar = view.findViewById(R.id.btn_ordenar)
 
         configurarRecyclerView()
         configurarListeners()
         observarViewModel()
         configurarSwipeParaDeletar()
+
+        btnOrdenar?.setOnClickListener {
+            mostrarMenuOrdenacao(it)
+        }
     }
 
     private fun configurarRecyclerView() {
@@ -82,6 +91,29 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
 
     override fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean) {
         viewModel.atualizarStatusTarefa(tarefa, estaConcluida)
+    }
+
+    private fun mostrarMenuOrdenacao(view: View) {
+        val popup = PopupMenu(requireContext(), view)
+
+        popup.menu.add(0, OpcaoOrdenacao.STATUS.ordinal, 0, "Status (Pendentes primeiro)")
+        popup.menu.add(0, OpcaoOrdenacao.ALFABETICA.ordinal, 1, "Descrição (A-Z)")
+        popup.menu.add(0, OpcaoOrdenacao.MAIS_RECENTE.ordinal, 2, "Data (Mais Recentes)")
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            val opcaoSelecionada = when (menuItem.itemId) {
+                OpcaoOrdenacao.STATUS.ordinal -> OpcaoOrdenacao.STATUS
+                OpcaoOrdenacao.ALFABETICA.ordinal -> OpcaoOrdenacao.ALFABETICA
+                OpcaoOrdenacao.MAIS_RECENTE.ordinal -> OpcaoOrdenacao.MAIS_RECENTE
+                else -> return@setOnMenuItemClickListener false
+            }
+
+            viewModel.setOrdenacao(opcaoSelecionada)
+            Toast.makeText(context, "Ordenado por: ${menuItem.title}", Toast.LENGTH_SHORT).show()
+            true
+        }
+
+        popup.show()
     }
 
     private fun configurarSwipeParaDeletar() {
