@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -26,6 +27,7 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     private lateinit var tarefaAdapter: TarefaAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var fabAdicionarTarefa: FloatingActionButton
+    private lateinit var emptyStateContainer: LinearLayout
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,6 +41,7 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
 
         recyclerView = view.findViewById(R.id.recycler_view_tarefas)
         fabAdicionarTarefa = view.findViewById(R.id.fab_adicionar_tarefa)
+        emptyStateContainer = view.findViewById(R.id.empty_state_container)
 
         configurarRecyclerView()
         configurarListeners()
@@ -64,6 +67,14 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     private fun observarViewModel() {
         viewModel.listaTarefas.observe(viewLifecycleOwner) { tarefas ->
             tarefaAdapter.atualizarLista(tarefas)
+
+            if (tarefas.isEmpty()) {
+                recyclerView.visibility = View.GONE
+                emptyStateContainer.visibility = View.VISIBLE
+            } else {
+                recyclerView.visibility = View.VISIBLE
+                emptyStateContainer.visibility = View.GONE
+            }
         }
     }
 
