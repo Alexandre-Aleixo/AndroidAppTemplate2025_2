@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -103,7 +105,7 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
                     "Tarefa '${tarefaParaDeletar.descricao}' removida.",
                     Snackbar.LENGTH_LONG
                 ).setAction("DESFAZER") {
-                    viewModel.adicionarTarefa(tarefaParaDeletar.descricao)
+                    viewModel.adicionarTarefa(tarefaParaDeletar.descricao, tarefaParaDeletar.iconeResId)
                 }.show()
             }
 
@@ -144,21 +146,54 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     }
 
     private fun mostrarDialogoEdicaoTarefa(tarefa: Tarefa) {
-        val editText = EditText(context)
-        editText.setText(tarefa.descricao)
+        val context = requireContext()
+        val dialogLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 50, 50, 50)
+        }
 
-        AlertDialog.Builder(requireContext())
+        val editText = EditText(context).apply {
+            setText(tarefa.descricao)
+            hint = "Descrição da Tarefa"
+        }
+        dialogLayout.addView(editText)
+
+        val spinnerIcone = Spinner(context)
+        val nomesIcones = IconeHelper.iconesDisponiveis.map { it.nome }
+
+        val spinnerAdapter = android.widget.ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_dropdown_item,
+            nomesIcones
+        )
+        spinnerIcone.adapter = spinnerAdapter
+
+        val iconeAtualIndex = IconeHelper.iconesDisponiveis.indexOfFirst { it.drawableResId == tarefa.iconeResId }
+        spinnerIcone.setSelection(if (iconeAtualIndex != -1) iconeAtualIndex else 0)
+
+        dialogLayout.addView(TextView(context).apply {
+            text = "Escolha a Categoria:"
+            setPadding(0, 20, 0, 0)
+        })
+        dialogLayout.addView(spinnerIcone)
+
+        AlertDialog.Builder(context)
             .setTitle("Editar Tarefa")
-            .setView(editText)
+            .setView(dialogLayout)
             .setPositiveButton("Salvar") { dialog, _ ->
                 val novaDescricao = editText.text.toString().trim()
-                if (novaDescricao.isNotEmpty() && novaDescricao != tarefa.descricao) {
-                    val tarefaAtualizada = tarefa.copy(descricao = novaDescricao)
+                val iconeOpcaoSelecionada = IconeHelper.iconesDisponiveis[spinnerIcone.selectedItemPosition]
+                val novoIconeResId = iconeOpcaoSelecionada.drawableResId
 
+                if (novaDescricao.isNotEmpty()) {
+                    val tarefaAtualizada = tarefa.copy(
+                        descricao = novaDescricao,
+                        iconeResId = novoIconeResId
+                    )
                     viewModel.atualizarDescricaoTarefa(tarefaAtualizada)
 
                     Toast.makeText(context, "Tarefa atualizada.", Toast.LENGTH_SHORT).show()
-                } else if (novaDescricao.isEmpty()) {
+                } else {
                     Toast.makeText(context, "A descrição não pode ser vazia.", Toast.LENGTH_SHORT).show()
                 }
                 dialog.dismiss()
@@ -171,15 +206,48 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     }
 
     private fun mostrarDialogoAdicionarTarefa() {
-        val editText = EditText(context)
+        val context = requireContext()
+        val dialogLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 50, 50, 50)
+        }
 
-        AlertDialog.Builder(requireContext())
+        val editText = EditText(context).apply {
+            hint = "Descrição da Tarefa"
+        }
+        dialogLayout.addView(editText)
+
+        val spinnerIcone = Spinner(context)
+        val nomesIcones = IconeHelper.iconesDisponiveis.map { it.nome }
+
+        val spinnerAdapter = android.widget.ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_dropdown_item,
+            nomesIcones
+        )
+        spinnerIcone.adapter = spinnerAdapter
+
+        dialogLayout.addView(TextView(context).apply {
+            text = "Escolha a Categoria:"
+            setPadding(0, 20, 0, 0)
+        })
+        dialogLayout.addView(spinnerIcone)
+
+        AlertDialog.Builder(context)
             .setTitle("Nova Tarefa")
-            .setView(editText)
+            .setView(dialogLayout)
             .setPositiveButton("Adicionar") { dialog, _ ->
                 val descricao = editText.text.toString().trim()
+                val iconeOpcaoSelecionada = IconeHelper.iconesDisponiveis[spinnerIcone.selectedItemPosition]
+                val iconeSelecionadoResId = iconeOpcaoSelecionada.drawableResId
+
                 if (descricao.isNotEmpty()) {
-                    viewModel.adicionarTarefa(descricao)
+                    val novaTarefa = Tarefa(
+                        descricao = descricao,
+                        iconeResId = iconeSelecionadoResId
+                    )
+
+                    viewModel.adicionarNovaTarefa(novaTarefa)
                 } else {
                     Toast.makeText(context, "A descrição não pode ser vazia.", Toast.LENGTH_SHORT).show()
                 }

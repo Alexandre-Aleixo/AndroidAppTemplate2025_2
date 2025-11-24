@@ -1,10 +1,10 @@
 package com.ifpr.androidapptemplate.baseclasses
 
+import com.google.firebase.database.Exclude
+
 data class Tarefa(
-
-    var id: String? = null,
-
-    var descricao: String = "",
-
-    var concluida: Boolean = false
+    @get:Exclude var id: String? = null,
+    val descricao: String = "",
+    val concluida: Boolean = false,
+    val iconeResId: Int = 0
 )

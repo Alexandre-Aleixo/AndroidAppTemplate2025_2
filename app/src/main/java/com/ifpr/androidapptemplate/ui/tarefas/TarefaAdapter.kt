@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.TextView
+import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
@@ -27,6 +28,7 @@ class TarefaAdapter(
     class TarefaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val descricao: TextView = itemView.findViewById(R.id.text_tarefa_descricao)
         val checkboxConcluida: CheckBox = itemView.findViewById(R.id.checkbox_tarefa_concluida)
+        val iconeCategoria: ImageView = itemView.findViewById(R.id.image_view_icone)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TarefaViewHolder {
@@ -39,6 +41,13 @@ class TarefaAdapter(
         val tarefaAtual = listaTarefas[position]
 
         holder.descricao.text = tarefaAtual.descricao
+
+        if (tarefaAtual.iconeResId != 0) {
+            holder.iconeCategoria.setImageResource(tarefaAtual.iconeResId)
+            holder.iconeCategoria.visibility = View.VISIBLE
+        } else {
+            holder.iconeCategoria.visibility = View.GONE
+        }
 
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
         holder.checkboxConcluida.isChecked = tarefaAtual.concluida

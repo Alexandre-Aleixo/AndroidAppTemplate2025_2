@@ -27,9 +27,12 @@ class TarefaViewModel : ViewModel() {
             val tarefas = mutableListOf<Tarefa>()
             for (taskSnapshot in snapshot.children) {
                 val tarefa = taskSnapshot.getValue(Tarefa::class.java)
-                tarefa?.let { tarefas.add(it) }
+                tarefa?.let {
+                    val tarefaComId = it.copy(id = taskSnapshot.key)
+                    tarefas.add(tarefaComId)
+                }
             }
-            _listaTarefas.value = tarefas
+            _listaTarefas.value = tarefas.sortedBy { it.concluida }
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -49,14 +52,19 @@ class TarefaViewModel : ViewModel() {
         databaseRef?.removeEventListener(valueEventListener)
     }
 
-    fun adicionarTarefa(descricao: String) {
+    fun adicionarNovaTarefa(tarefa: Tarefa) {
         if (databaseRef != null) {
             val taskId = databaseRef.push().key
             if (taskId != null) {
-                val novaTarefa = Tarefa(id = taskId, descricao = descricao)
+                val novaTarefa = tarefa.copy(id = taskId)
                 databaseRef.child(taskId).setValue(novaTarefa)
             }
         }
+    }
+
+    fun adicionarTarefa(descricao: String, iconeResId: Int = 0) {
+        val novaTarefa = Tarefa(descricao = descricao, iconeResId = iconeResId)
+        adicionarNovaTarefa(novaTarefa)
     }
 
     fun atualizarStatusTarefa(tarefa: Tarefa, estaConcluida: Boolean) {
@@ -75,12 +83,13 @@ class TarefaViewModel : ViewModel() {
     fun atualizarDescricaoTarefa(tarefa: Tarefa) {
         if (databaseRef != null && tarefa.id != null) {
             val updates = hashMapOf<String, Any>(
-                "descricao" to tarefa.descricao
+                "descricao" to tarefa.descricao,
+                "iconeResId" to tarefa.iconeResId
             )
 
             databaseRef.child(tarefa.id!!).updateChildren(updates)
         } else {
-            Log.w("TarefaViewModel", "Não foi possível atualizar a descrição: Referência nula ou ID da tarefa ausente.")
+            Log.w("TarefaViewModel", "Não foi possível atualizar: Referência nula ou ID da tarefa ausente.")
         }
     }
 }
