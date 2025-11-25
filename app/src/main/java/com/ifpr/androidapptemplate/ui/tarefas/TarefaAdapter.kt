@@ -56,7 +56,8 @@ class TarefaAdapter(
 
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
         holder.checkboxConcluida.isChecked = tarefaAtual.concluida
-        aplicarEstiloTexto(holder.descricao, tarefaAtual.concluida)
+
+        aplicarEstiloVisual(holder.descricao, holder.itemView, holder.checkboxConcluida, tarefaAtual.concluida)
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             listener.onStatusAlterado(tarefaAtual, estaConcluida)
@@ -74,12 +75,16 @@ class TarefaAdapter(
         notifyDataSetChanged()
     }
 
-    private fun aplicarEstiloTexto(textView: TextView, estaConcluida: Boolean) {
+    private fun aplicarEstiloVisual(textView: TextView, itemView: View, checkbox: CheckBox, estaConcluida: Boolean) {
         if (estaConcluida) {
             textView.paintFlags = textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            itemView.alpha = 0.6f
         } else {
             textView.paintFlags = textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+            itemView.alpha = 1.0f
         }
+
+        checkbox.buttonTintList = ContextCompat.getColorStateList(itemView.context, R.color.colorPrimary)
     }
 
     private fun aplicarCorDinamica(
