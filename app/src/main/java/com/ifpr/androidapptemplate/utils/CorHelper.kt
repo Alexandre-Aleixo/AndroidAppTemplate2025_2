@@ -1,4 +1,4 @@
-package com.ifpr.androidapptemplate.ui.tarefas
+package com.ifpr.androidapptemplate.utils
 
 import com.ifpr.androidapptemplate.R
 

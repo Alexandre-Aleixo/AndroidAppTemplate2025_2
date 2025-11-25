@@ -13,11 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.ifpr.androidapptemplate.utils.formatarDataCriacao
-
-
-interface TarefaAcoesListener {
-    fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean)
-}
+import com.ifpr.androidapptemplate.utils.CorHelper
 
 typealias OnTarefaClickListener = (Tarefa) -> Unit
 
@@ -43,9 +39,9 @@ class TarefaAdapter(
 
     override fun onBindViewHolder(holder: TarefaViewHolder, position: Int) {
         val tarefaAtual = listaTarefas[position]
-        val context = holder.itemView.context
 
         holder.descricao.text = tarefaAtual.descricao
+        // O método formatarDataCriacao() será implementado como uma função de extensão de Long
         holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
 
         if (tarefaAtual.iconeResId != 0) {

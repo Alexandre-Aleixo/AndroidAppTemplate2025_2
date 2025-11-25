@@ -7,4 +7,6 @@
     <string name="title_itens">Itens</string>
     <string name="nav_tarefas_title">Tarefas</string>
     <string name="tarefa_fragment_label">Minhas Tarefas</string>
+    <string name="salvar">Salvar</string>
+    <string name="adicionar">Adicionar</string>
 </resources>
