@@ -28,11 +28,26 @@ class TarefaViewModel : ViewModel() {
         override fun onDataChange(snapshot: DataSnapshot) {
             val tarefas = mutableListOf<Tarefa>()
             for (taskSnapshot in snapshot.children) {
-                val tarefa = taskSnapshot.getValue(Tarefa::class.java)
-                tarefa?.let {
-                    // ID deve ser String? (o tipo da chave do Firebase)
-                    val tarefaComId = it.copy(id = taskSnapshot.key)
-                    tarefas.add(tarefaComId)
+                val taskMap = taskSnapshot.value as? HashMap<String, Any>
+
+                if (taskMap != null) {
+                    val dataCriacaoAny = taskMap["dataCriacao"]
+                    val dataCriacaoValue: Long = when (dataCriacaoAny) {
+                        is String -> dataCriacaoAny.toLongOrNull() ?: 0L
+                        is Long -> dataCriacaoAny
+                        else -> 0L
+                    }
+
+                    val iconeResIdValue = (taskMap["iconeResId"] as? Long)?.toInt() ?: 0
+
+                    val tarefa = Tarefa(
+                        id = taskSnapshot.key,
+                        descricao = taskMap["descricao"] as? String ?: "",
+                        concluida = taskMap["concluida"] as? Boolean ?: false,
+                        iconeResId = iconeResIdValue,
+                        dataCriacao = dataCriacaoValue
+                    )
+                    tarefas.add(tarefa)
                 }
             }
             _listaTarefas.value = aplicarOrdenacao(tarefas, _ordenacaoAtual)
@@ -79,14 +94,28 @@ class TarefaViewModel : ViewModel() {
         if (databaseRef != null) {
             val taskId = databaseRef.push().key
             if (taskId != null) {
-                val novaTarefa = tarefa.copy(id = taskId)
-                databaseRef.child(taskId).setValue(novaTarefa)
+                val tarefaParaSalvar = tarefa.copy(id = taskId)
+
+                val taskMap = hashMapOf<String, Any>(
+                    "id" to tarefaParaSalvar.id!!,
+                    "descricao" to tarefaParaSalvar.descricao,
+                    "concluida" to tarefaParaSalvar.concluida,
+                    "iconeResId" to tarefaParaSalvar.iconeResId,
+                    "dataCriacao" to tarefaParaSalvar.dataCriacao.toString()
+                )
+
+                databaseRef.child(taskId).setValue(taskMap)
             }
         }
     }
 
     fun adicionarTarefa(descricao: String, iconeResId: Int = 0) {
-        val novaTarefa = Tarefa(descricao = descricao, iconeResId = iconeResId)
+        val timestampAtual = System.currentTimeMillis()
+        val novaTarefa = Tarefa(
+            descricao = descricao,
+            iconeResId = iconeResId,
+            dataCriacao = timestampAtual
+        )
         adicionarNovaTarefa(novaTarefa)
     }
 
