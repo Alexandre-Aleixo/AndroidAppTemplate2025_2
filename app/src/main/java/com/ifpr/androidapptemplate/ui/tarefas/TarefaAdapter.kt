@@ -12,6 +12,7 @@ import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
+import com.ifpr.androidapptemplate.utils.formatarDataCriacao
 
 
 interface TarefaAcoesListener {
@@ -31,6 +32,7 @@ class TarefaAdapter(
         val descricao: TextView = itemView.findViewById(R.id.text_tarefa_descricao)
         val checkboxConcluida: CheckBox = itemView.findViewById(R.id.checkbox_tarefa_concluida)
         val iconeCategoria: ImageView = itemView.findViewById(R.id.image_view_icone)
+        val data: TextView = itemView.findViewById(R.id.text_tarefa_data)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TarefaViewHolder {
@@ -44,6 +46,7 @@ class TarefaAdapter(
         val context = holder.itemView.context
 
         holder.descricao.text = tarefaAtual.descricao
+        holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
 
         if (tarefaAtual.iconeResId != 0) {
             holder.iconeCategoria.setImageResource(tarefaAtual.iconeResId)
@@ -57,9 +60,10 @@ class TarefaAdapter(
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
         holder.checkboxConcluida.isChecked = tarefaAtual.concluida
 
-        aplicarEstiloVisual(holder.descricao, holder.itemView, holder.checkboxConcluida, tarefaAtual.concluida)
+        aplicarEstiloVisual(holder.descricao, holder.itemView, holder.checkboxConcluida, holder.data, tarefaAtual.concluida)
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
+            holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
             listener.onStatusAlterado(tarefaAtual, estaConcluida)
         }
 
@@ -75,13 +79,21 @@ class TarefaAdapter(
         notifyDataSetChanged()
     }
 
-    private fun aplicarEstiloVisual(textView: TextView, itemView: View, checkbox: CheckBox, estaConcluida: Boolean) {
+    private fun aplicarEstiloVisual(
+        textView: TextView,
+        itemView: View,
+        checkbox: CheckBox,
+        dataView: TextView,
+        estaConcluida: Boolean
+    ) {
         if (estaConcluida) {
             textView.paintFlags = textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             itemView.alpha = 0.6f
+            dataView.alpha = 0.6f
         } else {
             textView.paintFlags = textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
             itemView.alpha = 1.0f
+            dataView.alpha = 1.0f
         }
 
         checkbox.buttonTintList = ContextCompat.getColorStateList(itemView.context, R.color.colorPrimary)

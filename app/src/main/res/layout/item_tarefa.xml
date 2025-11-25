@@ -11,54 +11,67 @@
     android:layout_marginBottom="4dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp"
-    app:contentPadding="0dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     android:stateListAnimator="@animator/touch_raise">
+
     <androidx.constraintlayout.widget.ConstraintLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
-
-    <CheckBox
-        android:id="@+id/checkbox_tarefa_concluida"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
 
-    <ImageView
-        android:id="@+id/image_view_icone"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="12dp"
-        android:contentDescription="Ícone de Categoria"
-        android:visibility="gone"
-        app:layout_constraintStart_toEndOf="@id/checkbox_tarefa_concluida"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:src="@drawable/ic_work_black_24dp"/>
+        <CheckBox
+            android:id="@+id/checkbox_tarefa_concluida"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <TextView
-        android:id="@+id/text_tarefa_descricao"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toEndOf="@id/image_view_icone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:text="Exemplo de descrição da tarefa"/>
+        <ImageView
+            android:id="@+id/image_view_icone"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="12dp"
+            android:contentDescription="Ícone de Categoria"
+            android:visibility="gone"
+            app:layout_constraintStart_toEndOf="@id/checkbox_tarefa_concluida"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:src="@drawable/ic_work_black_24dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/text_tarefa_descricao"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/image_view_icone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/text_tarefa_data"
+            app:layout_constraintVertical_chainStyle="packed"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Exemplo de descrição da tarefa"/>
+
+        <TextView
+            android:id="@+id/text_tarefa_data"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textSize="12sp"  android:textColor="?attr/colorSecondary"
+            app:layout_constraintStart_toEndOf="@id/image_view_icone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_tarefa_descricao"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="Criada em 24/11/2025 - 20:34"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>

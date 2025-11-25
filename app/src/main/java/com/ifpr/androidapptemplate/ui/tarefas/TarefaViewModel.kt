@@ -30,6 +30,7 @@ class TarefaViewModel : ViewModel() {
             for (taskSnapshot in snapshot.children) {
                 val tarefa = taskSnapshot.getValue(Tarefa::class.java)
                 tarefa?.let {
+                    // ID deve ser String? (o tipo da chave do Firebase)
                     val tarefaComId = it.copy(id = taskSnapshot.key)
                     tarefas.add(tarefaComId)
                 }
@@ -67,10 +68,10 @@ class TarefaViewModel : ViewModel() {
         return when (opcao) {
             OpcaoOrdenacao.STATUS -> lista.sortedWith(
                 compareBy<Tarefa> { it.concluida }
-                    .thenByDescending { it.id }
+                    .thenByDescending { it.dataCriacao }
             )
             OpcaoOrdenacao.ALFABETICA -> lista.sortedBy { it.descricao.toLowerCase() }
-            OpcaoOrdenacao.MAIS_RECENTE -> lista.sortedByDescending { it.id }
+            OpcaoOrdenacao.MAIS_RECENTE -> lista.sortedByDescending { it.dataCriacao }
         }
     }
 

@@ -1,10 +1,12 @@
 package com.ifpr.androidapptemplate.baseclasses
 
-import com.google.firebase.database.Exclude
+import java.util.concurrent.TimeUnit
 
 data class Tarefa(
-    @get:Exclude var id: String? = null,
+
+    var id: String? = null,
     val descricao: String = "",
     val concluida: Boolean = false,
-    val iconeResId: Int = 0
+    val iconeResId: Int = 0,
+    val dataCriacao: Long = System.currentTimeMillis()
 )
