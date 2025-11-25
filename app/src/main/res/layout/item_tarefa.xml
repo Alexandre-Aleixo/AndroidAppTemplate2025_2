@@ -14,7 +14,9 @@
     app:contentPadding="0dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"> <androidx.constraintlayout.widget.ConstraintLayout
+    android:foreground="?attr/selectableItemBackground"
+    android:stateListAnimator="@animator/touch_raise">
+    <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingStart="16dp"
