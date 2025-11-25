@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.TextView
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
@@ -39,14 +41,17 @@ class TarefaAdapter(
 
     override fun onBindViewHolder(holder: TarefaViewHolder, position: Int) {
         val tarefaAtual = listaTarefas[position]
+        val context = holder.itemView.context
 
         holder.descricao.text = tarefaAtual.descricao
 
         if (tarefaAtual.iconeResId != 0) {
             holder.iconeCategoria.setImageResource(tarefaAtual.iconeResId)
             holder.iconeCategoria.visibility = View.VISIBLE
+            aplicarCorDinamica(holder.descricao, holder.iconeCategoria, tarefaAtual.iconeResId, tarefaAtual.concluida)
         } else {
             holder.iconeCategoria.visibility = View.GONE
+            aplicarCorDinamica(holder.descricao, holder.iconeCategoria, 0, tarefaAtual.concluida)
         }
 
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
@@ -74,6 +79,26 @@ class TarefaAdapter(
             textView.paintFlags = textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
         } else {
             textView.paintFlags = textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+        }
+    }
+
+    private fun aplicarCorDinamica(
+        descricaoView: TextView,
+        iconeView: ImageView,
+        iconeResId: Int,
+        estaConcluida: Boolean
+    ) {
+        val context = descricaoView.context
+        val corResId = CorHelper.getColorResId(iconeResId)
+        val corFinal = ContextCompat.getColor(context, corResId)
+
+        if (estaConcluida) {
+            val corCinza = ContextCompat.getColor(context, R.color.gray_light)
+            descricaoView.setTextColor(corCinza)
+            ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, R.color.gray_light))
+        } else {
+            descricaoView.setTextColor(corFinal)
+            ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, corResId))
         }
     }
 }

@@ -9,13 +9,15 @@
     android:paddingEnd="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp"
-    android:background="?attr/selectableItemBackground"> <CheckBox
-    android:id="@+id/checkbox_tarefa_concluida"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"/>
+    android:background="?attr/selectableItemBackground">
+
+    <CheckBox
+        android:id="@+id/checkbox_tarefa_concluida"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <ImageView
         android:id="@+id/image_view_icone"
@@ -23,17 +25,19 @@
         android:layout_height="24dp"
         android:layout_marginStart="12dp"
         android:contentDescription="Ícone de Categoria"
-        android:visibility="gone"  app:layout_constraintStart_toEndOf="@id/checkbox_tarefa_concluida"
+        android:visibility="gone"
+        app:layout_constraintStart_toEndOf="@id/checkbox_tarefa_concluida"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:tint="?attr/colorPrimary"
-        tools:src="@drawable/ic_work_black_24dp"/> <TextView
+        tools:src="@drawable/ic_work_black_24dp"/>
+    <TextView
         android:id="@+id/text_tarefa_descricao"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/image_view_icone"  app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/image_view_icone"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:ellipsize="end"
