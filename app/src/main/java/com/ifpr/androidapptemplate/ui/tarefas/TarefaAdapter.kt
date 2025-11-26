@@ -21,7 +21,8 @@ import android.content.Context
 typealias OnTarefaClickListener = (Tarefa) -> Unit
 
 // ***************************************************************
-// O BLOCO DA INTERFACE TAREFAACOESLISTENER FOI REMOVIDO DAQUI!
+// É essencial que a interface TarefaAcoesListener esteja definida
+// em algum lugar do seu projeto para que esta classe compile.
 // ***************************************************************
 
 
@@ -60,9 +61,12 @@ class TarefaAdapter(
             holder.prazoView.visibility = View.VISIBLE
 
             if (!tarefaAtual.concluida && prazoLocal < System.currentTimeMillis()) {
+                // Se não concluída E prazo expirado -> Cor de alerta (red_delete)
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.red_delete))
             } else {
-                holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.gray_dark))
+                // Caso contrário (prazo futuro ou concluída) -> Cor de texto secundário
+                // SUBSTITUIÇÃO AQUI: R.color.gray_dark -> R.color.textColorSecondary
+                holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.textColorSecondary))
             }
         } else {
             holder.prazoView.visibility = View.GONE
@@ -120,6 +124,7 @@ class TarefaAdapter(
             prazoView.alpha = 1.0f
         }
 
+        // A cor do checkbox usa a cor principal do tema
         checkbox.buttonTintList = ContextCompat.getColorStateList(itemView.context, R.color.colorPrimary)
     }
 
@@ -134,9 +139,12 @@ class TarefaAdapter(
         val corFinal = ContextCompat.getColor(context, corResId)
 
         if (estaConcluida) {
-            val corCinza = ContextCompat.getColor(context, R.color.gray_light)
+            // SUBSTITUIÇÃO AQUI: R.color.gray_light -> R.color.textColorSecondary
+            // Usando textColorSecondary para garantir que a cor de "concluído"
+            // seja um cinza apropriado no modo claro e escuro.
+            val corCinza = ContextCompat.getColor(context, R.color.textColorSecondary)
             descricaoView.setTextColor(corCinza)
-            ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, R.color.gray_light))
+            ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, R.color.textColorSecondary))
         } else {
             descricaoView.setTextColor(corFinal)
             ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, corResId))
