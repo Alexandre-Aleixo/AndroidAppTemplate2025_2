@@ -73,7 +73,6 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
         tarefaParaEdicao?.let { tarefa ->
             binding.editTextNovaTarefa.setText(tarefa.descricao)
 
-            // Usa o prazo existente para inicializar
             prazoSelecionado = tarefa.prazo
 
             atualizarExibicaoPrazo(tarefa.prazo)
@@ -120,17 +119,14 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
                 TimePickerDialog(
                     requireContext(),
                     { _, hourOfDay, minute ->
-                        // Configura a data e hora selecionadas
                         calendario.set(year, month, dayOfMonth, hourOfDay, minute, 0)
-                        calendario.set(Calendar.MILLISECOND, 0) // Zera milissegundos para comparação mais limpa
+                        calendario.set(Calendar.MILLISECOND, 0)
 
                         val novoPrazo = calendario.timeInMillis
                         val agora = System.currentTimeMillis()
 
-                        // ⚠️ Validação Adicional: Verifica se a data/hora selecionada está no passado
                         if (novoPrazo <= agora) {
                             Toast.makeText(requireContext(), "O prazo deve ser uma data e hora futura.", Toast.LENGTH_LONG).show()
-                            // Não atualiza prazoSelecionado
                         } else {
                             prazoSelecionado = novoPrazo
                             atualizarExibicaoPrazo(prazoSelecionado)
@@ -145,7 +141,6 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
             calendario.get(Calendar.MONTH),
             calendario.get(Calendar.DAY_OF_MONTH)
         )
-        // Impede que o usuário selecione datas no DatePickerDialog que já passaram
         datePicker.datePicker.minDate = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)
         datePicker.show()
     }
@@ -166,20 +161,17 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
         val posicaoSelecionada = binding.spinnerIconeTarefa.selectedItemPosition
         val iconeSelecionadoResId = IconeHelper.iconesDisponiveis[posicaoSelecionada].drawableResId
 
-        // 1. Validação da Descrição
         if (descricao.isEmpty()) {
             Toast.makeText(context, "A descrição não pode ser vazia.", Toast.LENGTH_SHORT).show()
-            return // Impede salvar
+            return
         }
 
-        // 2. Validação FINAL do Prazo
         val agora = System.currentTimeMillis()
         if (prazoSelecionado != null && prazoSelecionado!! <= agora) {
             Toast.makeText(context, "O prazo FINAL deve ser uma data e hora futura. Ajuste ou limpe o campo.", Toast.LENGTH_LONG).show()
-            return // Impede salvar
+            return
         }
 
-        // 3. Salvar/Atualizar
         if (tarefaParaEdicao != null) {
             val tarefaAtualizada = tarefaParaEdicao!!.copy(
                 descricao = descricao,

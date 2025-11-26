@@ -28,19 +28,15 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
             .child("tarefas")
     }
 
-    // LiveData que armazena TODAS as tarefas do Firebase (Lista bruta)
     private val _todasAsTarefas = MutableLiveData<List<Tarefa>>()
 
-    // LiveData para armazenar o texto de busca
     private val _searchQuery = MutableLiveData("")
     val searchQuery: LiveData<String> = _searchQuery
 
-    // MediatorLiveData: Combina _todasAsTarefas, _searchQuery e _opcaoOrdenacao
     private val _listaTarefas = MediatorLiveData<List<Tarefa>>()
     val listaTarefas: LiveData<List<Tarefa>> = _listaTarefas
 
 
-    // Lógica de Ordenação
     private val _opcaoOrdenacao = MutableLiveData(OpcaoOrdenacao.STATUS)
     val opcaoOrdenacao: LiveData<OpcaoOrdenacao> = _opcaoOrdenacao
 
@@ -109,7 +105,6 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // Método setOrdenacao
     fun setOrdenacao(opcao: OpcaoOrdenacao) {
         if (_opcaoOrdenacao.value != opcao) {
             _opcaoOrdenacao.value = opcao
@@ -124,7 +119,6 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         val tarefasFiltradas = if (query.isBlank()) {
             todas
         } else {
-            // Filtra pela descrição, ignorando maiúsculas/minúsculas
             todas.filter {
                 it.descricao.contains(query, ignoreCase = true)
             }
@@ -133,7 +127,6 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         _listaTarefas.value = aplicarOrdenacao(tarefasFiltradas, ordenacao)
     }
 
-    // Lógica de Aplicação da Ordenação
     private fun aplicarOrdenacao(tarefas: List<Tarefa>, opcao: OpcaoOrdenacao): List<Tarefa> {
         return when (opcao) {
             OpcaoOrdenacao.STATUS -> tarefas.sortedWith(
@@ -146,23 +139,14 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
 
-    // ####################################################################
-    // LÓGICA DE NOTIFICAÇÕES ATUALIZADA
-    // ####################################################################
-
     private fun scheduleDeadlineNotification(tarefa: Tarefa) {
         tarefa.prazo?.let { deadline ->
             val now = System.currentTimeMillis()
             val workManager = WorkManager.getInstance(getApplication())
-
-            // ----------------------------------------------------
-            // 1. NOTIFICAÇÃO: 1 HORA ANTES (APROXIMANDO)
-            // ----------------------------------------------------
             val oneHourBefore = TimeUnit.HOURS.toMillis(1)
             val notificationApproachingTime = deadline - oneHourBefore
             val tagApproaching = "DEADLINE_APPROACHING_${tarefa.id}"
 
-            // Sempre cancela o trabalho anterior com a mesma tag antes de re-agendar
             workManager.cancelAllWorkByTag(tagApproaching)
 
             if (notificationApproachingTime > now) {
@@ -171,7 +155,7 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
                 val inputDataApproaching = Data.Builder()
                     .putString("TASK_ID", tarefa.id)
                     .putString("TASK_TITLE", tarefa.descricao)
-                    .putString("NOTIFICATION_TYPE", "APPROACHING") // Tipo para o Worker
+                    .putString("NOTIFICATION_TYPE", "APPROACHING")
                     .build()
 
                 val approachingRequest = OneTimeWorkRequestBuilder<DeadlineNotificationWorker>()
@@ -183,12 +167,8 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
                 workManager.enqueue(approachingRequest)
             }
 
-            // ----------------------------------------------------
-            // 2. NOTIFICAÇÃO: NO PRAZO EXATO (FINALIZADO/PERDIDO)
-            // ----------------------------------------------------
             val tagDeadline = "DEADLINE_TIME_${tarefa.id}"
 
-            // Sempre cancela o trabalho anterior com a mesma tag antes de re-agendar
             workManager.cancelAllWorkByTag(tagDeadline)
 
             if (deadline > now) {
@@ -197,7 +177,7 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
                 val inputDataDeadline = Data.Builder()
                     .putString("TASK_ID", tarefa.id)
                     .putString("TASK_TITLE", tarefa.descricao)
-                    .putString("NOTIFICATION_TYPE", "DEADLINE_MISSED") // Tipo para o Worker
+                    .putString("NOTIFICATION_TYPE", "DEADLINE_MISSED")
                     .build()
 
                 val deadlineRequest = OneTimeWorkRequestBuilder<DeadlineNotificationWorker>()
@@ -223,7 +203,6 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         val tagDeadline = "DEADLINE_TIME_${tarefa.id}"
 
         if (tarefa.concluida) {
-            // 1. Notificação de Conclusão (NOVO)
             val idUnico = tarefa.id.hashCode() + 3
             NotificationHelper.showImmediateNotification(
                 getApplication(),
@@ -232,12 +211,10 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
                 idUnico
             )
 
-            // 2. Cancela ambas as WorkRequests (Aproximando e Prazo Exato)
             workManager.cancelAllWorkByTag(tagApproaching)
             workManager.cancelAllWorkByTag(tagDeadline)
 
         } else {
-            // Se foi desmarcada, reagenda as notificações
             scheduleDeadlineNotification(tarefa)
         }
     }
@@ -246,17 +223,11 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         val idUnico = tarefa.id.hashCode() + 2
         NotificationHelper.showImmediateNotification(getApplication(), "Tarefa Excluída 🗑️", "A tarefa '${tarefa.descricao}' foi removida.", idUnico)
 
-        // ATUALIZADO: Cancela as duas WorkRequests (Aproximando e Prazo Exato)
         WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_APPROACHING_${tarefa.id}")
         WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_TIME_${tarefa.id}")
     }
 
-    // ####################################################################
-    // MÉTODOS DE PERSISTÊNCIA (Inalterados)
-    // ####################################################################
-
     private fun adicionarNovaTarefa(tarefa: Tarefa) {
-        // ... (lógica de persistência inalterada)
         if (databaseRef != null) {
             val taskId = databaseRef.push().key
             if (taskId != null) {

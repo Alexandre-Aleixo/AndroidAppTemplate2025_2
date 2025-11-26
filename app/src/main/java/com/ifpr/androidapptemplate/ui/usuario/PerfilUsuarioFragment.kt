@@ -25,17 +25,13 @@ import com.google.firebase.database.ValueEventListener
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Usuario
 
-// Importações necessárias para Base64 e Imagem:
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import java.io.ByteArrayOutputStream
 
-// Removida: import com.google.firebase.storage.FirebaseStorage
-
 class PerfilUsuarioFragment : Fragment() {
 
-    // ... (Variáveis de inicialização)
     private lateinit var userProfileImageView: ImageView
     private lateinit var registerNameEditText: EditText
     private lateinit var registerEmailEditText: EditText
@@ -46,17 +42,15 @@ class PerfilUsuarioFragment : Fragment() {
     private lateinit var inputLayoutConfirmarSenha: TextInputLayout
     private lateinit var registerButton: Button
     private lateinit var sairButton: Button
-    private lateinit var changePhotoButton: View // O botão da câmera
+    private lateinit var changePhotoButton: View
     private lateinit var usersReference: DatabaseReference
     private lateinit var auth: FirebaseAuth
 
-    // Variável para armazenar a imagem Base64 atual ou nova
     private var currentBase64Image: String? = null
 
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             userProfileImageView.setImageURI(it)
-            // CHAMA A CONVERSÃO BASE64 E ATUALIZA A VARIÁVEL
             currentBase64Image = uriToBase64(it)
         }
     }
@@ -69,7 +63,6 @@ class PerfilUsuarioFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_perfil_usuario, container, false)
         auth = FirebaseAuth.getInstance()
 
-        // 1. Inicialização de Views (igual a antes)
         userProfileImageView = view.findViewById(R.id.userProfileImageView)
         registerNameEditText = view.findViewById(R.id.registerNameEditText)
         registerEmailEditText = view.findViewById(R.id.registerEmailEditText)
@@ -97,9 +90,6 @@ class PerfilUsuarioFragment : Fragment() {
             registerEmailEditText.isEnabled = false
         }
 
-        // A foto não será mais carregada do Auth.photoUrl, mas sim do Database.
-
-        // 4. Listeners
         registerButton.setOnClickListener { updateUser() }
         sairButton.setOnClickListener { signOut() }
         changePhotoButton.setOnClickListener { selectImageLauncher.launch("image/*") }
@@ -114,16 +104,10 @@ class PerfilUsuarioFragment : Fragment() {
         if(userFirebase != null){
             registerNameEditText.setText(userFirebase.displayName)
             registerEmailEditText.setText(userFirebase.email)
-            // Carrega dados e a imagem Base64
             recuperarDadosUsuario(userFirebase.uid)
         }
     }
 
-    //---------------------------------------------------------
-    // FUNÇÕES DE IMAGEM BASE64
-    //---------------------------------------------------------
-
-    // Converte Uri da imagem para String Base64
     private fun uriToBase64(uri: Uri): String? {
         return try {
             val inputStream = requireContext().contentResolver.openInputStream(uri)
@@ -131,7 +115,6 @@ class PerfilUsuarioFragment : Fragment() {
             inputStream?.close()
 
             if (bytes != null) {
-                // Decodifica para Bitmap e comprime para economizar espaço no DB (50 = qualidade)
                 val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 val outputStream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
@@ -146,7 +129,6 @@ class PerfilUsuarioFragment : Fragment() {
         }
     }
 
-    // Função auxiliar para exibir o Base64 (usada em recuperarDadosUsuario)
     private fun displayBase64Image(base64: String?) {
         if (base64 != null && base64.isNotEmpty()) {
             try {
@@ -162,13 +144,6 @@ class PerfilUsuarioFragment : Fragment() {
         }
     }
 
-    // A função 'uploadNewPhoto' não é mais necessária, o trabalho é feito no selectImageLauncher.
-
-    //---------------------------------------------------------
-    // FUNÇÕES DE DADOS (AJUSTADAS PARA BASE64)
-    //---------------------------------------------------------
-
-    // 6. Carregamento do Endereço E IMAGEM (Firebase Database)
     fun recuperarDadosUsuario(usuarioKey: String) {
         val databaseReference = FirebaseDatabase.getInstance().getReference("users")
 
@@ -180,8 +155,7 @@ class PerfilUsuarioFragment : Fragment() {
                     usuario?.let {
                         registerEnderecoEditText.setText(it.endereco ?: "")
 
-                        // NOVO: Armazena a Base64 lida e exibe a imagem
-                        currentBase64Image = it.base64Image // Guarda a imagem lida
+                        currentBase64Image = it.base64Image
                         displayBase64Image(currentBase64Image)
                     }
                 }
@@ -193,14 +167,12 @@ class PerfilUsuarioFragment : Fragment() {
         })
     }
 
-    // 7. Atualização do Perfil
     private fun updateUser() {
         val name = registerNameEditText.text.toString().trim()
         val endereco = registerEnderecoEditText.text.toString().trim()
         val user = auth.currentUser
 
         if (user != null) {
-            // AQUI GARANTIMOS QUE A IMAGEM ATUAL (OU NOVA) É SALVA
             val usuario = Usuario(user.uid, name, user.email, endereco, currentBase64Image)
             saveUserToDatabase(usuario)
         } else {
@@ -208,11 +180,8 @@ class PerfilUsuarioFragment : Fragment() {
         }
     }
 
-    // Função 'updateProfile' e 'updatePhotoUrl' não são mais necessárias, pois o nome não é atualizado no Auth.
-
     private fun saveUserToDatabase(usuario: Usuario) {
         if (usuario.key != null) {
-            // Apenas o nome do display será atualizado no Auth, o restante (Endereço e Base64) vai para o DB.
             val profileUpdates = UserProfileChangeRequest.Builder()
                 .setDisplayName(usuario.nome)
                 .build()
@@ -220,7 +189,6 @@ class PerfilUsuarioFragment : Fragment() {
             auth.currentUser?.updateProfile(profileUpdates)
                 ?.addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        // Salva os dados (incluindo o Base64) no Realtime Database
                         usersReference.child(usuario.key.toString()).setValue(usuario)
                             .addOnSuccessListener {
                                 Toast.makeText(context, "Perfil atualizado com sucesso!", Toast.LENGTH_SHORT).show()
@@ -238,7 +206,6 @@ class PerfilUsuarioFragment : Fragment() {
         }
     }
 
-    // ... (signOut permanece o mesmo)
     private fun signOut() {
         auth.signOut()
         Toast.makeText(context, "Logout realizado com sucesso!", Toast.LENGTH_SHORT).show()

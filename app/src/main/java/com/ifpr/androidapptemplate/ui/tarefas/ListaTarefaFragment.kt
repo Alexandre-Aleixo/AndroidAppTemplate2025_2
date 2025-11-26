@@ -20,9 +20,8 @@ import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import android.widget.LinearLayout
-import android.widget.TextView // NOVA IMPORTAÇÃO NECESSÁRIA
+import android.widget.TextView
 
-// ESTE CÓDIGO ESTÁ CORRETO. ELE SÓ FUNCIONARÁ QUANDO A INTERFACE FOR CORRIGIDA.
 
 class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
 
@@ -33,7 +32,6 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     private lateinit var fabAdicionarTarefa: FloatingActionButton
     private lateinit var emptyStateContainer: LinearLayout
     private lateinit var searchView: SearchView
-    // NOVO: Variável para a mensagem de "Nenhum Resultado Encontrado"
     private lateinit var noResultsMessage: TextView
 
     private var btnOrdenar: ImageButton? = null
@@ -53,12 +51,10 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         emptyStateContainer = view.findViewById(R.id.empty_state_container)
         btnOrdenar = view.findViewById(R.id.btn_ordenar)
         searchView = view.findViewById(R.id.search_view)
-        // NOVO: Inicializa a TextView de resultados vazios
         noResultsMessage = view.findViewById(R.id.text_no_results)
 
         configurarRecyclerView()
         configurarListeners()
-        // NOTA: 'observarViewModel' será ajustado abaixo.
         observarViewModel()
         configurarSwipeParaDeletar()
 
@@ -117,27 +113,21 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
                 recyclerView.visibility = View.GONE
 
                 if (isSearching) {
-                    // Caso 1: Busca ativa, mas não encontrou resultados
-                    emptyStateContainer.visibility = View.GONE // Esconde o padrão
-                    noResultsMessage.visibility = View.VISIBLE // Mostra a mensagem de busca vazia
-                    // Use a string parametrizada (R.string.no_results_found)
+                    emptyStateContainer.visibility = View.GONE
+                    noResultsMessage.visibility = View.VISIBLE
                     noResultsMessage.text = getString(R.string.no_results_found, currentQuery)
                 } else {
-                    // Caso 2: Nenhuma busca ativa e lista de tarefas vazia (primeiro uso)
-                    emptyStateContainer.visibility = View.VISIBLE // Mostra o Empty State padrão
+                    emptyStateContainer.visibility = View.VISIBLE
                     noResultsMessage.visibility = View.GONE
                 }
             } else {
-                // Caso 3: Lista tem resultados
                 recyclerView.visibility = View.VISIBLE
                 emptyStateContainer.visibility = View.GONE
                 noResultsMessage.visibility = View.GONE
             }
         }
     }
-    // ####################################################################
 
-    // ... (Restante do código inalterado) ...
 
     override fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean) {
         viewModel.atualizarStatusTarefa(tarefa, estaConcluida)
@@ -184,7 +174,7 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
                 val position = viewHolder.adapterPosition
                 val tarefaParaDeletar = tarefaAdapter.listaTarefas[position]
 
-                viewModel.deletarTarefa(tarefaParaDeletar) // CORRETO
+                viewModel.deletarTarefa(tarefaParaDeletar)
 
                 Snackbar.make(
                     requireView(),

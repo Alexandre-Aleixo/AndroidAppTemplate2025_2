@@ -9,11 +9,7 @@ class NotificationsViewModel : ViewModel() {
 
     private val repository = NotificationRepository()
 
-    /**
-     * LiveData que observa a lista de notificações do Firebase em tempo real.
-     * O repositório já cuida da busca e ordenação das mais recentes.
-     */
+
     val notificationList: LiveData<List<NotificationData>> = repository.getNotifications()
 
-    // Não precisamos de lógica complexa aqui, apenas expomos os dados.
 }

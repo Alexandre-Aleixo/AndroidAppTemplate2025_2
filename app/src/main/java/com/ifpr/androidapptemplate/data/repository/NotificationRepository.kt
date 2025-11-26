@@ -11,17 +11,13 @@ import java.util.UUID
 class NotificationRepository {
 
     private val db = FirebaseDatabase.getInstance()
-    // IMPORTANTE: Altere "UserAuth.currentUserId" se o seu método de obter o ID do usuário for diferente
     private val userId = UserAuth.currentUserId
 
     private fun getNotificationsRef() = userId?.let {
         db.getReference("users").child(it).child("notifications")
     }
 
-    /**
-     * Salva um novo registro de notificação no Firebase.
-     * Chamado pelo NotificationHelper.
-     */
+
     fun saveNotification(title: String, message: String, type: NotificationType) {
         val ref = getNotificationsRef() ?: return
         val notificationId = UUID.randomUUID().toString()
@@ -33,13 +29,10 @@ class NotificationRepository {
             type = type
         )
 
-        // Salvamento assíncrono (fire-and-forget)
         ref.child(notificationId).setValue(notification)
     }
 
-    /**
-     * Observa a lista de notificações no Firebase em tempo real e a expõe via LiveData.
-     */
+
     fun getNotifications(): LiveData<List<NotificationData>> {
         val liveData = MutableLiveData<List<NotificationData>>()
         val ref = getNotificationsRef() ?: return liveData

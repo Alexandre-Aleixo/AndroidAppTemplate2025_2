@@ -16,14 +16,10 @@ import com.ifpr.androidapptemplate.utils.formatarDataCriacao
 import com.ifpr.androidapptemplate.utils.formatarPrazoParaExibicao
 import com.ifpr.androidapptemplate.utils.CorHelper
 import android.content.Context
-// Importação de TarefaAcoesListener é implícita se estiver no mesmo pacote.
+
 
 typealias OnTarefaClickListener = (Tarefa) -> Unit
 
-// ***************************************************************
-// É essencial que a interface TarefaAcoesListener esteja definida
-// em algum lugar do seu projeto para que esta classe compile.
-// ***************************************************************
 
 
 class TarefaAdapter(
@@ -53,7 +49,7 @@ class TarefaAdapter(
         holder.descricao.text = tarefaAtual.descricao
         holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
 
-        // NOVO: Exibir Prazo
+
         val prazoLocal = tarefaAtual.prazo
 
         if (prazoLocal != null) {
@@ -61,11 +57,10 @@ class TarefaAdapter(
             holder.prazoView.visibility = View.VISIBLE
 
             if (!tarefaAtual.concluida && prazoLocal < System.currentTimeMillis()) {
-                // Se não concluída E prazo expirado -> Cor de alerta (red_delete)
+
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.red_delete))
             } else {
-                // Caso contrário (prazo futuro ou concluída) -> Cor de texto secundário
-                // SUBSTITUIÇÃO AQUI: R.color.gray_dark -> R.color.textColorSecondary
+
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.textColorSecondary))
             }
         } else {
@@ -88,7 +83,6 @@ class TarefaAdapter(
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
-            // Chamada correta (sem Context)
             listener.onStatusAlterado(tarefaAtual, estaConcluida)
         }
 
@@ -124,7 +118,7 @@ class TarefaAdapter(
             prazoView.alpha = 1.0f
         }
 
-        // A cor do checkbox usa a cor principal do tema
+
         checkbox.buttonTintList = ContextCompat.getColorStateList(itemView.context, R.color.colorPrimary)
     }
 
@@ -139,9 +133,6 @@ class TarefaAdapter(
         val corFinal = ContextCompat.getColor(context, corResId)
 
         if (estaConcluida) {
-            // SUBSTITUIÇÃO AQUI: R.color.gray_light -> R.color.textColorSecondary
-            // Usando textColorSecondary para garantir que a cor de "concluído"
-            // seja um cinza apropriado no modo claro e escuro.
             val corCinza = ContextCompat.getColor(context, R.color.textColorSecondary)
             descricaoView.setTextColor(corCinza)
             ImageViewCompat.setImageTintList(iconeView, ContextCompat.getColorStateList(context, R.color.textColorSecondary))
