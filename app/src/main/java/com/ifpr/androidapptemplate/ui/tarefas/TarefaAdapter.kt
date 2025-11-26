@@ -15,8 +15,15 @@ import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.ifpr.androidapptemplate.utils.formatarDataCriacao
 import com.ifpr.androidapptemplate.utils.formatarPrazoParaExibicao
 import com.ifpr.androidapptemplate.utils.CorHelper
+import android.content.Context
+// Importação de TarefaAcoesListener é implícita se estiver no mesmo pacote.
 
 typealias OnTarefaClickListener = (Tarefa) -> Unit
+
+// ***************************************************************
+// O BLOCO DA INTERFACE TAREFAACOESLISTENER FOI REMOVIDO DAQUI!
+// ***************************************************************
+
 
 class TarefaAdapter(
     private val listener: TarefaAcoesListener,
@@ -46,14 +53,12 @@ class TarefaAdapter(
         holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
 
         // NOVO: Exibir Prazo
-        // Cria uma variável local imutável para contornar o erro de Smart Cast
         val prazoLocal = tarefaAtual.prazo
 
         if (prazoLocal != null) {
             holder.prazoView.text = "Prazo: ${prazoLocal.formatarPrazoParaExibicao()}"
             holder.prazoView.visibility = View.VISIBLE
 
-            // Agora, usamos 'prazoLocal' que o compilador sabe ser um Long não nulo
             if (!tarefaAtual.concluida && prazoLocal < System.currentTimeMillis()) {
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.red_delete))
             } else {
@@ -79,8 +84,8 @@ class TarefaAdapter(
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
-            // CORRIGIDO: Passando o Context do item da view
-            listener.onStatusAlterado(holder.itemView.context, tarefaAtual, estaConcluida)
+            // Chamada correta (sem Context)
+            listener.onStatusAlterado(tarefaAtual, estaConcluida)
         }
 
         holder.itemView.setOnClickListener {

@@ -141,6 +141,7 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
             binding.textViewPrazo.text = "Nenhum prazo definido"
             binding.textViewPrazo.setTextColor(resources.getColor(android.R.color.darker_gray))
         } else {
+            // Usa o formatador de extensão (assumindo que ele está no tipo Long)
             binding.textViewPrazo.text = prazo.formatarPrazoParaExibicao()
             binding.textViewPrazo.setTextColor(resources.getColor(R.color.colorPrimary))
         }
@@ -158,12 +159,12 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
                     iconeResId = iconeSelecionadoResId,
                     prazo = prazoSelecionado
                 )
-                // AQUI: Adiciona requireContext()
-                viewModel.atualizarDescricaoTarefa(requireContext(), tarefaAtualizada)
+                // CORREÇÃO: Remove o Context. A chamada agora espera apenas 'tarefaAtualizada'.
+                viewModel.atualizarDescricaoTarefa(tarefaAtualizada)
                 Toast.makeText(context, "Tarefa atualizada!", Toast.LENGTH_SHORT).show()
             } else {
-                // AQUI: Adiciona requireContext()
-                viewModel.adicionarTarefa(requireContext(), descricao, iconeSelecionadoResId, prazoSelecionado)
+                // CORREÇÃO: Remove o Context. A chamada agora espera (descricao, iconeResId, prazoSelecionado).
+                viewModel.adicionarTarefa(descricao, iconeSelecionadoResId, prazoSelecionado)
                 Toast.makeText(context, "Tarefa adicionada!", Toast.LENGTH_SHORT).show()
             }
             dismiss()

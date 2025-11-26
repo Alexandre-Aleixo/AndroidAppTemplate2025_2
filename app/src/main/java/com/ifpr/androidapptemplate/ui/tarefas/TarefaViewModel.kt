@@ -2,23 +2,25 @@ package com.ifpr.androidapptemplate.ui.tarefas
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import com.ifpr.androidapptemplate.baseclasses.Tarefa
-import com.google.firebase.database.*
-import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.AndroidViewModel
+import android.app.Application
 import android.util.Log
-import android.content.Context
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ifpr.androidapptemplate.workers.DeadlineNotificationWorker
-import com.ifpr.androidapptemplate.utils.showImmediateNotification
+import com.ifpr.androidapptemplate.utils.NotificationHelper
+import com.ifpr.androidapptemplate.baseclasses.Tarefa
+import com.ifpr.androidapptemplate.data.UserAuth
+import com.google.firebase.database.*
 import java.util.concurrent.TimeUnit
+// IMPORTAÇÃO CORRETA: O ViewModel precisa importar a enumeração que está em outro arquivo.
+import com.ifpr.androidapptemplate.ui.tarefas.OpcaoOrdenacao
 
-class TarefaViewModel : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
-    private val currentUserId: String? = auth.currentUser?.uid
+class TarefaViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val currentUserId: String? = UserAuth.currentUserId
 
     private val databaseRef: DatabaseReference? = currentUserId?.let { uid ->
         FirebaseDatabase.getInstance().getReference("users")
@@ -29,7 +31,11 @@ class TarefaViewModel : ViewModel() {
     private val _listaTarefas = MutableLiveData<List<Tarefa>>()
     val listaTarefas: LiveData<List<Tarefa>> = _listaTarefas
 
-    private var _ordenacaoAtual = OpcaoOrdenacao.STATUS
+    // ####################################################################
+    // Lógica de Ordenação
+    // ####################################################################
+    private val _opcaoOrdenacao = MutableLiveData(OpcaoOrdenacao.STATUS)
+    val opcaoOrdenacao: LiveData<OpcaoOrdenacao> = _opcaoOrdenacao
 
     private val valueEventListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
@@ -45,7 +51,6 @@ class TarefaViewModel : ViewModel() {
                         else -> 0L
                     }
 
-                    // Leitura do campo 'prazo'
                     val prazoAny = taskMap["prazo"]
                     val prazoValue: Long? = when (prazoAny) {
                         is String -> prazoAny.toLongOrNull()
@@ -66,7 +71,8 @@ class TarefaViewModel : ViewModel() {
                     tarefas.add(tarefa)
                 }
             }
-            _listaTarefas.value = aplicarOrdenacao(tarefas, _ordenacaoAtual)
+            // Aplica a ordenação baseada na última opção selecionada
+            _listaTarefas.value = aplicarOrdenacao(tarefas, _opcaoOrdenacao.value ?: OpcaoOrdenacao.STATUS)
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -79,6 +85,13 @@ class TarefaViewModel : ViewModel() {
         if (currentUserId == null) {
             _listaTarefas.value = emptyList()
         }
+
+        // Observa mudanças na ordenação para reordenar a lista LiveData
+        _opcaoOrdenacao.observeForever { novaOrdenacao ->
+            _listaTarefas.value?.let { currentList ->
+                _listaTarefas.value = aplicarOrdenacao(currentList, novaOrdenacao)
+            }
+        }
     }
 
     override fun onCleared() {
@@ -86,45 +99,41 @@ class TarefaViewModel : ViewModel() {
         databaseRef?.removeEventListener(valueEventListener)
     }
 
-    fun setOrdenacao(novaOpcao: OpcaoOrdenacao) {
-        if (novaOpcao != _ordenacaoAtual) {
-            _ordenacaoAtual = novaOpcao
-            _listaTarefas.value?.let {
-                _listaTarefas.value = aplicarOrdenacao(it, novaOpcao)
-            }
+    // Método setOrdenacao
+    fun setOrdenacao(opcao: OpcaoOrdenacao) {
+        if (_opcaoOrdenacao.value != opcao) {
+            _opcaoOrdenacao.value = opcao
         }
     }
 
-    private fun aplicarOrdenacao(lista: List<Tarefa>, opcao: OpcaoOrdenacao): List<Tarefa> {
+    // Lógica de Aplicação da Ordenação
+    private fun aplicarOrdenacao(tarefas: List<Tarefa>, opcao: OpcaoOrdenacao): List<Tarefa> {
         return when (opcao) {
-            OpcaoOrdenacao.STATUS -> lista.sortedWith(
+            OpcaoOrdenacao.STATUS -> tarefas.sortedWith(
                 compareBy<Tarefa> { it.concluida }
                     .thenByDescending { it.dataCriacao }
             )
-            OpcaoOrdenacao.ALFABETICA -> lista.sortedBy { it.descricao.toLowerCase() }
-            OpcaoOrdenacao.MAIS_RECENTE -> lista.sortedByDescending { it.dataCriacao }
+            OpcaoOrdenacao.ALFABETICA -> tarefas.sortedBy { it.descricao }
+            OpcaoOrdenacao.MAIS_RECENTE -> tarefas.sortedByDescending { it.dataCriacao }
         }
     }
 
+
     // ####################################################################
-    // LÓGICA DE NOTIFICAÇÕES (NOVO)
+    // LÓGICA DE NOTIFICAÇÕES
     // ####################################################################
 
-    private fun scheduleDeadlineNotification(context: Context, tarefa: Tarefa) {
+    private fun scheduleDeadlineNotification(tarefa: Tarefa) {
         tarefa.prazo?.let { deadline ->
             val now = System.currentTimeMillis()
-            // Notificar 1 hora antes do prazo
             val oneHourBefore = TimeUnit.HOURS.toMillis(1)
             val notificationTime = deadline - oneHourBefore
 
-            // Só agenda se o prazo e o tempo de notificação estiverem no futuro
             if (deadline > now && notificationTime > now) {
                 val delay = notificationTime - now
 
-                // 1. Cancela qualquer agendamento anterior (em caso de edição)
-                WorkManager.getInstance(context).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
+                WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
 
-                // 2. Cria a requisição
                 val inputData = Data.Builder()
                     .putString("TASK_ID", tarefa.id)
                     .putString("TASK_TITLE", tarefa.descricao)
@@ -136,38 +145,36 @@ class TarefaViewModel : ViewModel() {
                     .addTag("DEADLINE_${tarefa.id}")
                     .build()
 
-                // 3. Enfileira a requisição
-                WorkManager.getInstance(context).enqueue(deadlineRequest)
+                WorkManager.getInstance(getApplication()).enqueue(deadlineRequest)
             }
         }
     }
 
-    private fun handleTaskCreated(context: Context, tarefa: Tarefa) {
+    private fun handleTaskCreated(tarefa: Tarefa) {
         val idUnico = tarefa.id.hashCode() + 1
-        showImmediateNotification(context, "Tarefa Criada ✅", "A tarefa '${tarefa.descricao}' foi adicionada.", idUnico)
-        scheduleDeadlineNotification(context, tarefa)
+        NotificationHelper.showImmediateNotification(getApplication(), "Tarefa Criada ✅", "A tarefa '${tarefa.descricao}' foi adicionada.", idUnico)
+        scheduleDeadlineNotification(tarefa)
     }
 
-    private fun handleTaskUpdated(context: Context, tarefa: Tarefa) {
-        // Se a tarefa foi concluída, cancelamos a notificação de prazo, se não, reagendamos.
+    private fun handleTaskUpdated(tarefa: Tarefa) {
         if (tarefa.concluida) {
-            WorkManager.getInstance(context).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
+            WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
         } else {
-            scheduleDeadlineNotification(context, tarefa)
+            scheduleDeadlineNotification(tarefa)
         }
     }
 
-    private fun handleTaskDeleted(context: Context, tarefa: Tarefa) {
+    private fun handleTaskDeleted(tarefa: Tarefa) {
         val idUnico = tarefa.id.hashCode() + 2
-        showImmediateNotification(context, "Tarefa Excluída 🗑️", "A tarefa '${tarefa.descricao}' foi removida.", idUnico)
-        WorkManager.getInstance(context).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
+        NotificationHelper.showImmediateNotification(getApplication(), "Tarefa Excluída 🗑️", "A tarefa '${tarefa.descricao}' foi removida.", idUnico)
+        WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
     }
 
     // ####################################################################
-    // MÉTODOS DE PERSISTÊNCIA ATUALIZADOS (REQUEREM CONTEXT)
+    // MÉTODOS DE PERSISTÊNCIA
     // ####################################################################
 
-    private fun adicionarNovaTarefa(context: Context, tarefa: Tarefa) {
+    private fun adicionarNovaTarefa(tarefa: Tarefa) {
         if (databaseRef != null) {
             val taskId = databaseRef.push().key
             if (taskId != null) {
@@ -184,14 +191,14 @@ class TarefaViewModel : ViewModel() {
 
                 databaseRef.child(taskId).setValue(taskMap).addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        handleTaskCreated(context, tarefaParaSalvar) // CHAMA NOTIFICAÇÃO
+                        handleTaskCreated(tarefaParaSalvar)
                     }
                 }
             }
         }
     }
 
-    fun adicionarTarefa(context: Context, descricao: String, iconeResId: Int = 0, prazo: Long? = null) {
+    fun adicionarTarefa(descricao: String, iconeResId: Int = 0, prazo: Long? = null) {
         val timestampAtual = System.currentTimeMillis()
         val novaTarefa = Tarefa(
             descricao = descricao,
@@ -199,32 +206,32 @@ class TarefaViewModel : ViewModel() {
             dataCriacao = timestampAtual,
             prazo = prazo
         )
-        adicionarNovaTarefa(context, novaTarefa)
+        adicionarNovaTarefa(novaTarefa)
     }
 
-    fun atualizarStatusTarefa(context: Context, tarefa: Tarefa, estaConcluida: Boolean) {
+    fun atualizarStatusTarefa(tarefa: Tarefa, estaConcluida: Boolean) {
         if (databaseRef != null && tarefa.id != null) {
             val updates = hashMapOf<String, Any>("concluida" to estaConcluida)
             databaseRef.child(tarefa.id!!).updateChildren(updates).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val tarefaAtualizada = tarefa.copy(concluida = estaConcluida)
-                    handleTaskUpdated(context, tarefaAtualizada) // Trata o reagendamento/cancelamento
+                    handleTaskUpdated(tarefaAtualizada)
                 }
             }
         }
     }
 
-    fun deletarTarefa(context: Context, tarefa: Tarefa) {
+    fun deletarTarefa(tarefa: Tarefa) {
         if (databaseRef != null && tarefa.id != null) {
             databaseRef.child(tarefa.id!!).removeValue().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    handleTaskDeleted(context, tarefa) // CHAMA NOTIFICAÇÃO E CANCELA PRAZO
+                    handleTaskDeleted(tarefa)
                 }
             }
         }
     }
 
-    fun atualizarDescricaoTarefa(context: Context, tarefa: Tarefa) {
+    fun atualizarDescricaoTarefa(tarefa: Tarefa) {
         if (databaseRef != null && tarefa.id != null) {
             val updates = hashMapOf<String, Any>(
                 "descricao" to tarefa.descricao,
@@ -234,7 +241,7 @@ class TarefaViewModel : ViewModel() {
 
             databaseRef.child(tarefa.id!!).updateChildren(updates).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    handleTaskUpdated(context, tarefa) // REAGENDAMENTO DO PRAZO
+                    handleTaskUpdated(tarefa)
                 }
             }
         } else {

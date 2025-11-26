@@ -6,7 +6,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ifpr.androidapptemplate.R
-import com.ifpr.androidapptemplate.utils.CHANNEL_ID
+// Importe o objeto que contém a constante
+import com.ifpr.androidapptemplate.utils.NotificationHelper
 
 /**
  * Worker responsável por disparar a notificação de prazo final.
@@ -26,7 +27,8 @@ class DeadlineNotificationWorker(
         // Usa o hash do ID da tarefa como ID único da notificação
         val notificationId = taskId.hashCode()
 
-        val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+        // Use NotificationHelper.CHANNEL_ID para resolver a referência
+        val builder = NotificationCompat.Builder(applicationContext, NotificationHelper.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notifications_black_24dp) // Use um ícone adequado
             .setContentTitle("Prazo Final Próximo! 🚨")
             .setContentText("A tarefa '$taskTitle' tem o prazo final em breve.")

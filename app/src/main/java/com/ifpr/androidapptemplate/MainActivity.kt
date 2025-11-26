@@ -7,7 +7,8 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.ifpr.androidapptemplate.databinding.ActivityMainBinding
-import com.ifpr.androidapptemplate.utils.createNotificationChannel // IMPORTAÇÃO NECESSÁRIA
+// REMOVA ESTA LINHA: import com.ifpr.androidapptemplate.utils.createNotificationChannel
+import com.ifpr.androidapptemplate.utils.NotificationHelper // NOVA IMPORTAÇÃO NECESSÁRIA
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,8 +17,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Inicializa o Canal de Notificação
-        createNotificationChannel(this)
+        // **CORREÇÃO AQUI:** Chama a função usando o objeto NotificationHelper
+        NotificationHelper.createNotificationChannel(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
