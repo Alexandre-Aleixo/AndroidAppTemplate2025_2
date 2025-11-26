@@ -38,6 +38,14 @@ class TarefaViewModel : ViewModel() {
                         else -> 0L
                     }
 
+                    // NOVO: Leitura do campo 'prazo'
+                    val prazoAny = taskMap["prazo"]
+                    val prazoValue: Long? = when (prazoAny) {
+                        is String -> prazoAny.toLongOrNull()
+                        is Long -> prazoAny
+                        else -> null
+                    }
+
                     val iconeResIdValue = (taskMap["iconeResId"] as? Long)?.toInt() ?: 0
 
                     val tarefa = Tarefa(
@@ -45,7 +53,8 @@ class TarefaViewModel : ViewModel() {
                         descricao = taskMap["descricao"] as? String ?: "",
                         concluida = taskMap["concluida"] as? Boolean ?: false,
                         iconeResId = iconeResIdValue,
-                        dataCriacao = dataCriacaoValue
+                        dataCriacao = dataCriacaoValue,
+                        prazo = prazoValue // NOVO: Atribuição do prazo
                     )
                     tarefas.add(tarefa)
                 }
@@ -90,7 +99,7 @@ class TarefaViewModel : ViewModel() {
         }
     }
 
-    fun adicionarNovaTarefa(tarefa: Tarefa) {
+    private fun adicionarNovaTarefa(tarefa: Tarefa) {
         if (databaseRef != null) {
             val taskId = databaseRef.push().key
             if (taskId != null) {
@@ -101,7 +110,8 @@ class TarefaViewModel : ViewModel() {
                     "descricao" to tarefaParaSalvar.descricao,
                     "concluida" to tarefaParaSalvar.concluida,
                     "iconeResId" to tarefaParaSalvar.iconeResId,
-                    "dataCriacao" to tarefaParaSalvar.dataCriacao.toString()
+                    "dataCriacao" to tarefaParaSalvar.dataCriacao,
+                    "prazo" to (tarefaParaSalvar.prazo ?: "null") // NOVO: Salvando o prazo
                 )
 
                 databaseRef.child(taskId).setValue(taskMap)
@@ -109,12 +119,13 @@ class TarefaViewModel : ViewModel() {
         }
     }
 
-    fun adicionarTarefa(descricao: String, iconeResId: Int = 0) {
+    fun adicionarTarefa(descricao: String, iconeResId: Int = 0, prazo: Long? = null) {
         val timestampAtual = System.currentTimeMillis()
         val novaTarefa = Tarefa(
             descricao = descricao,
             iconeResId = iconeResId,
-            dataCriacao = timestampAtual
+            dataCriacao = timestampAtual,
+            prazo = prazo
         )
         adicionarNovaTarefa(novaTarefa)
     }
@@ -136,7 +147,8 @@ class TarefaViewModel : ViewModel() {
         if (databaseRef != null && tarefa.id != null) {
             val updates = hashMapOf<String, Any>(
                 "descricao" to tarefa.descricao,
-                "iconeResId" to tarefa.iconeResId
+                "iconeResId" to tarefa.iconeResId,
+                "prazo" to (tarefa.prazo ?: "null")
             )
 
             databaseRef.child(tarefa.id!!).updateChildren(updates)

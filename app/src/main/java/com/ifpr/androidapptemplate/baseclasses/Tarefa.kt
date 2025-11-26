@@ -12,5 +12,8 @@ data class Tarefa(
     val iconeResId: Int = 0,
 
     @get:PropertyName("dataCriacao")
-    val dataCriacao: Long = 0L
+    val dataCriacao: Long = 0L,
+
+    @get:PropertyName("prazo")
+    val prazo: Long? = null
 ) : Parcelable

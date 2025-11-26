@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.ifpr.androidapptemplate.utils.formatarDataCriacao
+import com.ifpr.androidapptemplate.utils.formatarPrazoParaExibicao
 import com.ifpr.androidapptemplate.utils.CorHelper
 
 typealias OnTarefaClickListener = (Tarefa) -> Unit
@@ -29,6 +30,7 @@ class TarefaAdapter(
         val checkboxConcluida: CheckBox = itemView.findViewById(R.id.checkbox_tarefa_concluida)
         val iconeCategoria: ImageView = itemView.findViewById(R.id.image_view_icone)
         val data: TextView = itemView.findViewById(R.id.text_tarefa_data)
+        val prazoView: TextView = itemView.findViewById(R.id.text_tarefa_prazo)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TarefaViewHolder {
@@ -41,8 +43,21 @@ class TarefaAdapter(
         val tarefaAtual = listaTarefas[position]
 
         holder.descricao.text = tarefaAtual.descricao
-        // O método formatarDataCriacao() será implementado como uma função de extensão de Long
         holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
+
+        // NOVO: Exibir Prazo
+        if (tarefaAtual.prazo != null) {
+            holder.prazoView.text = "Prazo: ${tarefaAtual.prazo.formatarPrazoParaExibicao()}"
+            holder.prazoView.visibility = View.VISIBLE
+            // NOVO: Define cor de alerta se estiver perto/vencido (lógica simples)
+            if (!tarefaAtual.concluida && tarefaAtual.prazo < System.currentTimeMillis()) {
+                holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.red_delete))
+            } else {
+                holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.gray_dark))
+            }
+        } else {
+            holder.prazoView.visibility = View.GONE
+        }
 
         if (tarefaAtual.iconeResId != 0) {
             holder.iconeCategoria.setImageResource(tarefaAtual.iconeResId)
@@ -56,7 +71,7 @@ class TarefaAdapter(
         holder.checkboxConcluida.setOnCheckedChangeListener(null)
         holder.checkboxConcluida.isChecked = tarefaAtual.concluida
 
-        aplicarEstiloVisual(holder.descricao, holder.itemView, holder.checkboxConcluida, holder.data, tarefaAtual.concluida)
+        aplicarEstiloVisual(holder.descricao, holder.itemView, holder.checkboxConcluida, holder.data, holder.prazoView, tarefaAtual.concluida)
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
@@ -80,16 +95,19 @@ class TarefaAdapter(
         itemView: View,
         checkbox: CheckBox,
         dataView: TextView,
+        prazoView: TextView,
         estaConcluida: Boolean
     ) {
         if (estaConcluida) {
             textView.paintFlags = textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             itemView.alpha = 0.6f
             dataView.alpha = 0.6f
+            prazoView.alpha = 0.6f
         } else {
             textView.paintFlags = textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
             itemView.alpha = 1.0f
             dataView.alpha = 1.0f
+            prazoView.alpha = 1.0f
         }
 
         checkbox.buttonTintList = ContextCompat.getColorStateList(itemView.context, R.color.colorPrimary)

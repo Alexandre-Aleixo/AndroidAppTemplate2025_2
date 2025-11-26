@@ -35,11 +35,48 @@
         android:layout_marginTop="8dp"
         android:minHeight="48dp" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Prazo:"
+        android:layout_marginTop="16dp"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:id="@+id/layout_prazo_seletor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="?android:attr/selectableItemBackground"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/text_view_prazo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Nenhum prazo definido"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/button_limpar_prazo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Limpar"
+            android:textSize="12sp"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+
+    </LinearLayout>
+
     <Button
         android:id="@+id/button_adicionar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Adicionar"
+        android:text="@string/adicionar"
         android:layout_marginTop="24dp"
         android:layout_gravity="end" />
 

@@ -1,5 +1,7 @@
 package com.ifpr.androidapptemplate.ui.tarefas
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,12 +13,17 @@ import androidx.fragment.app.activityViewModels
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.ifpr.androidapptemplate.databinding.DialogAdicionarTarefaBinding
+import com.ifpr.androidapptemplate.utils.formatarPrazoParaExibicao
 import com.ifpr.androidapptemplate.utils.IconeHelper
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 class AdicionarTarefaDialogFragment : DialogFragment() {
 
     private val viewModel: TarefaViewModel by activityViewModels()
     private var tarefaParaEdicao: Tarefa? = null
+
+    private var prazoSelecionado: Long? = null
 
     private var _binding: DialogAdicionarTarefaBinding? = null
     private val binding get() = _binding!!
@@ -48,22 +55,43 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         configurarSpinner()
+        configurarListenersPrazo()
 
         if (tarefaParaEdicao != null) {
-            binding.editTextNovaTarefa.setText(tarefaParaEdicao!!.descricao)
+            preencherDadosEdicao()
             binding.buttonAdicionar.text = getString(R.string.salvar)
-
-            // Define o Spinner na categoria atual
-            val iconeAtualIndex = IconeHelper.iconesDisponiveis.indexOfFirst { it.drawableResId == tarefaParaEdicao!!.iconeResId }
-            if (iconeAtualIndex != -1) {
-                binding.spinnerIconeTarefa.setSelection(iconeAtualIndex)
-            }
         } else {
             binding.buttonAdicionar.text = getString(R.string.adicionar)
         }
 
         binding.buttonAdicionar.setOnClickListener {
             salvarTarefa()
+        }
+    }
+
+    private fun preencherDadosEdicao() {
+        tarefaParaEdicao?.let { tarefa ->
+            binding.editTextNovaTarefa.setText(tarefa.descricao)
+
+            prazoSelecionado = tarefa.prazo
+
+            atualizarExibicaoPrazo(tarefa.prazo)
+
+            val iconeAtualIndex = IconeHelper.iconesDisponiveis.indexOfFirst { it.drawableResId == tarefa.iconeResId }
+            if (iconeAtualIndex != -1) {
+                binding.spinnerIconeTarefa.setSelection(iconeAtualIndex)
+            }
+        }
+    }
+
+    private fun configurarListenersPrazo() {
+        binding.layoutPrazoSeletor.setOnClickListener {
+            mostrarPickerDialogs()
+        }
+
+        binding.buttonLimparPrazo.setOnClickListener {
+            prazoSelecionado = null
+            atualizarExibicaoPrazo(null)
         }
     }
 
@@ -78,6 +106,46 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
         binding.spinnerIconeTarefa.adapter = spinnerAdapter
     }
 
+    private fun mostrarPickerDialogs() {
+        val calendario = Calendar.getInstance()
+
+        prazoSelecionado?.let {
+            calendario.timeInMillis = it
+        }
+
+        val datePicker = DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                TimePickerDialog(
+                    requireContext(),
+                    { _, hourOfDay, minute ->
+                        calendario.set(year, month, dayOfMonth, hourOfDay, minute, 0)
+                        prazoSelecionado = calendario.timeInMillis
+                        atualizarExibicaoPrazo(prazoSelecionado)
+                    },
+                    calendario.get(Calendar.HOUR_OF_DAY),
+                    calendario.get(Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH)
+        )
+        datePicker.datePicker.minDate = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)
+        datePicker.show()
+    }
+
+    private fun atualizarExibicaoPrazo(prazo: Long?) {
+        if (prazo == null) {
+            binding.textViewPrazo.text = "Nenhum prazo definido"
+            binding.textViewPrazo.setTextColor(resources.getColor(android.R.color.darker_gray))
+        } else {
+            binding.textViewPrazo.text = prazo.formatarPrazoParaExibicao()
+            binding.textViewPrazo.setTextColor(resources.getColor(R.color.colorPrimary))
+        }
+    }
+
     private fun salvarTarefa() {
         val descricao = binding.editTextNovaTarefa.text.toString().trim()
         val posicaoSelecionada = binding.spinnerIconeTarefa.selectedItemPosition
@@ -87,12 +155,14 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
             if (tarefaParaEdicao != null) {
                 val tarefaAtualizada = tarefaParaEdicao!!.copy(
                     descricao = descricao,
-                    iconeResId = iconeSelecionadoResId
+                    iconeResId = iconeSelecionadoResId,
+                    prazo = prazoSelecionado
                 )
                 viewModel.atualizarDescricaoTarefa(tarefaAtualizada)
                 Toast.makeText(context, "Tarefa atualizada!", Toast.LENGTH_SHORT).show()
             } else {
-                viewModel.adicionarTarefa(descricao, iconeSelecionadoResId)
+                // MODO CRIAÇÃO: Adiciona nova tarefa, incluindo o prazo
+                viewModel.adicionarTarefa(descricao, iconeSelecionadoResId, prazoSelecionado)
                 Toast.makeText(context, "Tarefa adicionada!", Toast.LENGTH_SHORT).show()
             }
             dismiss()

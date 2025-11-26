@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_view_tarefa"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="8dp"
@@ -58,19 +59,33 @@
             app:layout_constraintVertical_chainStyle="packed"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="Exemplo de descrição da tarefa"/>
+            tools:text="Exemplo de descrição da tarefa"/>
 
         <TextView
             android:id="@+id/text_tarefa_data"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:textSize="12sp"  android:textColor="?attr/colorSecondary"
+            android:textSize="12sp"
+            android:textColor="?attr/colorSecondary"
             app:layout_constraintStart_toEndOf="@id/image_view_icone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_tarefa_descricao"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/text_tarefa_prazo"
             tools:text="Criada em 24/11/2025 - 20:34"/>
+
+        <TextView
+            android:id="@+id/text_tarefa_prazo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textSize="12sp"
+            android:textColor="@color/red_delete"
+            app:layout_constraintStart_toEndOf="@id/image_view_icone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_tarefa_data"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="Prazo: 25/11/2025 às 10:00"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
