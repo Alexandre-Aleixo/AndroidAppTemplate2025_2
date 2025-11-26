@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.PopupMenu
 import android.widget.ImageButton
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,6 +20,7 @@ import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import android.widget.LinearLayout
+import android.widget.TextView // NOVA IMPORTAÇÃO NECESSÁRIA
 
 // ESTE CÓDIGO ESTÁ CORRETO. ELE SÓ FUNCIONARÁ QUANDO A INTERFACE FOR CORRIGIDA.
 
@@ -30,6 +32,9 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var fabAdicionarTarefa: FloatingActionButton
     private lateinit var emptyStateContainer: LinearLayout
+    private lateinit var searchView: SearchView
+    // NOVO: Variável para a mensagem de "Nenhum Resultado Encontrado"
+    private lateinit var noResultsMessage: TextView
 
     private var btnOrdenar: ImageButton? = null
 
@@ -47,11 +52,17 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         fabAdicionarTarefa = view.findViewById(R.id.fab_adicionar_tarefa)
         emptyStateContainer = view.findViewById(R.id.empty_state_container)
         btnOrdenar = view.findViewById(R.id.btn_ordenar)
+        searchView = view.findViewById(R.id.search_view)
+        // NOVO: Inicializa a TextView de resultados vazios
+        noResultsMessage = view.findViewById(R.id.text_no_results)
 
         configurarRecyclerView()
         configurarListeners()
+        // NOTA: 'observarViewModel' será ajustado abaixo.
         observarViewModel()
         configurarSwipeParaDeletar()
+
+        configurarSearchView()
 
         btnOrdenar?.setOnClickListener {
             mostrarMenuOrdenacao(it)
@@ -63,6 +74,25 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         recyclerView.adapter = tarefaAdapter
     }
 
+    private fun configurarSearchView() {
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.setSearchQuery(newText.orEmpty())
+                return true
+            }
+        })
+
+        searchView.setOnCloseListener {
+            viewModel.setSearchQuery("")
+            true
+        }
+    }
+
+
     private fun onTarefaClick(tarefa: Tarefa) {
         mostrarDialogoEdicaoTarefa(tarefa)
     }
@@ -73,26 +103,46 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         }
     }
 
+    // ####################################################################
+    // Lógica de Visibilidade ATUALIZADA (3 Estados)
+    // ####################################################################
     private fun observarViewModel() {
         viewModel.listaTarefas.observe(viewLifecycleOwner) { tarefas ->
             tarefaAdapter.atualizarLista(tarefas)
 
+            val currentQuery = viewModel.searchQuery.value.orEmpty().trim()
+            val isSearching = currentQuery.isNotEmpty()
+
             if (tarefas.isEmpty()) {
                 recyclerView.visibility = View.GONE
-                emptyStateContainer.visibility = View.VISIBLE
+
+                if (isSearching) {
+                    // Caso 1: Busca ativa, mas não encontrou resultados
+                    emptyStateContainer.visibility = View.GONE // Esconde o padrão
+                    noResultsMessage.visibility = View.VISIBLE // Mostra a mensagem de busca vazia
+                    // Use a string parametrizada (R.string.no_results_found)
+                    noResultsMessage.text = getString(R.string.no_results_found, currentQuery)
+                } else {
+                    // Caso 2: Nenhuma busca ativa e lista de tarefas vazia (primeiro uso)
+                    emptyStateContainer.visibility = View.VISIBLE // Mostra o Empty State padrão
+                    noResultsMessage.visibility = View.GONE
+                }
             } else {
+                // Caso 3: Lista tem resultados
                 recyclerView.visibility = View.VISIBLE
                 emptyStateContainer.visibility = View.GONE
+                noResultsMessage.visibility = View.GONE
             }
         }
     }
+    // ####################################################################
 
-    // CORRETO: Assinatura sem Context
+    // ... (Restante do código inalterado) ...
+
     override fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean) {
         viewModel.atualizarStatusTarefa(tarefa, estaConcluida)
     }
 
-    // CORRETO: Assinatura sem Context
     override fun onDeletarTarefa(tarefa: Tarefa) {
         viewModel.deletarTarefa(tarefa)
     }

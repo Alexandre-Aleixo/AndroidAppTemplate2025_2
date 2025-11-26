@@ -14,9 +14,8 @@ import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.ifpr.androidapptemplate.data.UserAuth
 import com.google.firebase.database.*
 import java.util.concurrent.TimeUnit
-// IMPORTAÇÃO CORRETA: O ViewModel precisa importar a enumeração que está em outro arquivo.
 import com.ifpr.androidapptemplate.ui.tarefas.OpcaoOrdenacao
-
+import androidx.lifecycle.MediatorLiveData // NOVA IMPORTAÇÃO ESSENCIAL
 
 class TarefaViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -28,19 +27,34 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
             .child("tarefas")
     }
 
-    private val _listaTarefas = MutableLiveData<List<Tarefa>>()
+    // ####################################################################
+    // MUDANÇAS PARA BUSCA E FILTRO
+    // ####################################################################
+
+    // 1. LiveData que armazena TODAS as tarefas do Firebase (Lista bruta)
+    private val _todasAsTarefas = MutableLiveData<List<Tarefa>>()
+
+    // 2. LiveData para armazenar o texto de busca
+    private val _searchQuery = MutableLiveData("")
+    val searchQuery: LiveData<String> = _searchQuery
+
+    // 3. MediatorLiveData: Combina _todasAsTarefas, _searchQuery e _opcaoOrdenacao
+    private val _listaTarefas = MediatorLiveData<List<Tarefa>>()
     val listaTarefas: LiveData<List<Tarefa>> = _listaTarefas
 
-    // ####################################################################
+
     // Lógica de Ordenação
-    // ####################################################################
     private val _opcaoOrdenacao = MutableLiveData(OpcaoOrdenacao.STATUS)
     val opcaoOrdenacao: LiveData<OpcaoOrdenacao> = _opcaoOrdenacao
 
+    // ####################################################################
+    // valueEventListener - ALIMENTA _todasAsTarefas
+    // ####################################################################
     private val valueEventListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             val tarefas = mutableListOf<Tarefa>()
             for (taskSnapshot in snapshot.children) {
+                // ... (Sua lógica de parsing de tarefas) ...
                 val taskMap = taskSnapshot.value as? HashMap<String, Any>
 
                 if (taskMap != null) {
@@ -71,8 +85,8 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
                     tarefas.add(tarefa)
                 }
             }
-            // Aplica a ordenação baseada na última opção selecionada
-            _listaTarefas.value = aplicarOrdenacao(tarefas, _opcaoOrdenacao.value ?: OpcaoOrdenacao.STATUS)
+            // MUDANÇA: Alimenta _todasAsTarefas. O MediatorLiveData recalcula _listaTarefas.
+            _todasAsTarefas.value = tarefas
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -80,33 +94,75 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    // ####################################################################
+    // init - CONFIGURAÇÃO DO MEDIATORLIVE DATA
+    // ####################################################################
     init {
         databaseRef?.addValueEventListener(valueEventListener)
         if (currentUserId == null) {
-            _listaTarefas.value = emptyList()
+            _todasAsTarefas.value = emptyList()
         }
 
-        // Observa mudanças na ordenação para reordenar a lista LiveData
-        _opcaoOrdenacao.observeForever { novaOrdenacao ->
-            _listaTarefas.value?.let { currentList ->
-                _listaTarefas.value = aplicarOrdenacao(currentList, novaOrdenacao)
-            }
-        }
+        // Configura o MediatorLiveData para reagir a TUDO:
+        // 1. Quando o Firebase (via _todasAsTarefas) muda
+        _listaTarefas.addSource(_todasAsTarefas) { aplicarFiltroEOrdenacao() }
+        // 2. Quando o usuário muda o texto de busca
+        _listaTarefas.addSource(_searchQuery) { aplicarFiltroEOrdenacao() }
+        // 3. Quando o usuário muda a ordenação
+        _listaTarefas.addSource(_opcaoOrdenacao) { aplicarFiltroEOrdenacao() }
     }
+
+    // ... (onCleared inalterado)
 
     override fun onCleared() {
         super.onCleared()
         databaseRef?.removeEventListener(valueEventListener)
     }
 
-    // Método setOrdenacao
+    // ####################################################################
+    // setOrdenacao e NOVO setSearchQuery
+    // ####################################################################
+
+    // NOVO: Método para o Fragment chamar quando o texto de busca mudar
+    fun setSearchQuery(query: String) {
+        // Normaliza para lowercase e remove espaços em branco (trim) para a busca
+        val newQuery = query.trim()
+        if (_searchQuery.value != newQuery) {
+            _searchQuery.value = newQuery
+        }
+    }
+
+    // Método setOrdenacao (Inalterado, mas agora dispara o MediatorLiveData)
     fun setOrdenacao(opcao: OpcaoOrdenacao) {
         if (_opcaoOrdenacao.value != opcao) {
             _opcaoOrdenacao.value = opcao
         }
     }
 
-    // Lógica de Aplicação da Ordenação
+    // ####################################################################
+    // Lógica de Filtro e Ordenação (NOVA CENTRALIZAÇÃO)
+    // ####################################################################
+
+    private fun aplicarFiltroEOrdenacao() {
+        val query = _searchQuery.value ?: ""
+        val todas = _todasAsTarefas.value ?: emptyList()
+        val ordenacao = _opcaoOrdenacao.value ?: OpcaoOrdenacao.STATUS
+
+        // 1. APLICA O FILTRO DE BUSCA
+        val tarefasFiltradas = if (query.isBlank()) {
+            todas
+        } else {
+            // Filtra pela descrição, ignorando maiúsculas/minúsculas
+            todas.filter {
+                it.descricao.contains(query, ignoreCase = true)
+            }
+        }
+
+        // 2. APLICA A ORDENAÇÃO (reutiliza o método existente)
+        _listaTarefas.value = aplicarOrdenacao(tarefasFiltradas, ordenacao)
+    }
+
+    // Lógica de Aplicação da Ordenação (método existente)
     private fun aplicarOrdenacao(tarefas: List<Tarefa>, opcao: OpcaoOrdenacao): List<Tarefa> {
         return when (opcao) {
             OpcaoOrdenacao.STATUS -> tarefas.sortedWith(
@@ -120,7 +176,7 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
 
 
     // ####################################################################
-    // LÓGICA DE NOTIFICAÇÕES
+    // LÓGICA DE NOTIFICAÇÕES E PERSISTÊNCIA (Inalteradas, mas mantidas aqui)
     // ####################################################################
 
     private fun scheduleDeadlineNotification(tarefa: Tarefa) {
@@ -169,10 +225,6 @@ class TarefaViewModel(application: Application) : AndroidViewModel(application) 
         NotificationHelper.showImmediateNotification(getApplication(), "Tarefa Excluída 🗑️", "A tarefa '${tarefa.descricao}' foi removida.", idUnico)
         WorkManager.getInstance(getApplication()).cancelAllWorkByTag("DEADLINE_${tarefa.id}")
     }
-
-    // ####################################################################
-    // MÉTODOS DE PERSISTÊNCIA
-    // ####################################################################
 
     private fun adicionarNovaTarefa(tarefa: Tarefa) {
         if (databaseRef != null) {
