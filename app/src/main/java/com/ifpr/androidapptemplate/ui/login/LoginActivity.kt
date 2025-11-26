@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -14,6 +12,8 @@ import com.google.android.gms.common.SignInButton
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.common.api.ApiException
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText // Importação útil
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -24,10 +24,11 @@ import com.ifpr.androidapptemplate.ui.usuario.CadastroUsuarioActivity
 
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var emailEditText: EditText
-    private lateinit var passwordEditText: EditText
-    private lateinit var loginButton: Button
-    private lateinit var registerLink: TextView
+    // Agora usa TextInputEditText ou apenas EditText, dependendo da sua preferência
+    private lateinit var emailEditText: TextInputEditText
+    private lateinit var passwordEditText: TextInputEditText
+    private lateinit var loginButton: MaterialButton // Usando MaterialButton
+    private lateinit var registerButton: MaterialButton // Renomeado de registerLink para registerButton
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var btnGoogleSignIn: SignInButton
     private lateinit var googleSignInClient: GoogleSignInClient
@@ -46,15 +47,16 @@ class LoginActivity : AppCompatActivity() {
         // Inicializa o Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance()
 
-        emailEditText = findViewById(R.id.edit_text_email)
-        passwordEditText = findViewById(R.id.edit_text_password)
-        loginButton = findViewById(R.id.button_login)
-        registerLink = findViewById(R.id.registerLink)
-        btnGoogleSignIn = findViewById<SignInButton>(R.id.btnGoogleSignIn)
+        // CORREÇÃO: Usando os novos IDs do activity_login.xml
+        emailEditText = findViewById(R.id.loginEmailEditText)
+        passwordEditText = findViewById(R.id.loginPasswordEditText)
+        loginButton = findViewById(R.id.loginButton) // Novo ID do botão de login
+        registerButton = findViewById(R.id.registerButton) // Novo ID do botão de registro
+        btnGoogleSignIn = findViewById<SignInButton>(R.id.googleSignInButton) // ID corrigido para Google Sign In
 
-        val registerLink: TextView = findViewById(R.id.registerLink)
-        registerLink.setOnClickListener {
-            val intent: Intent = Intent(
+        // CORREÇÃO: Usando o novo botão de registro
+        registerButton.setOnClickListener {
+            val intent = Intent(
                 applicationContext,
                 CadastroUsuarioActivity::class.java
             )
@@ -80,6 +82,8 @@ class LoginActivity : AppCompatActivity() {
             signInGoogle()
         }
     }
+
+    // ... (O restante da Activity permanece o mesmo)
 
     private fun signIn(email: String, password: String) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
