@@ -58,7 +58,6 @@ class PerfilUsuarioFragment : Fragment() {
         registerNameEditText = view.findViewById(R.id.registerNameEditText)
         registerEmailEditText = view.findViewById(R.id.registerEmailEditText)
         registerEnderecoEditText = view.findViewById(R.id.registerEnderecoEditText)
-        registerProfissaoEditText = view.findViewById(R.id.registerProfissaoEditText)
         registerPasswordEditText = view.findViewById(R.id.registerPasswordEditText)
         registerConfirmPasswordEditText = view.findViewById(R.id.registerConfirmPasswordEditText)
         registerButton = view.findViewById(R.id.salvarButton)

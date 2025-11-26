@@ -1,9 +1,6 @@
 <resources>
     <string name="app_name">To-Do CheckList</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
-    <string name="title_profile">Profile</string>
+    <string name="title_notifications">Notificações</string> <string name="title_profile">Perfil</string>
     <string name="title_itens">Itens</string>
     <string name="nav_tarefas_title">Tarefas</string>
     <string name="tarefa_fragment_label">Minhas Tarefas</string>

@@ -7,8 +7,8 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.ifpr.androidapptemplate.databinding.ActivityMainBinding
-// REMOVA ESTA LINHA: import com.ifpr.androidapptemplate.utils.createNotificationChannel
-import com.ifpr.androidapptemplate.utils.NotificationHelper // NOVA IMPORTAÇÃO NECESSÁRIA
+import com.ifpr.androidapptemplate.utils.NotificationHelper
+import com.google.android.material.appbar.MaterialToolbar // Certifique-se de que esta importação está correta!
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +23,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // 1. OBTEM A REFERÊNCIA DA TOOLBAR QUE ADICIONAMOS NO XML
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+
+        // 2. CONFIGURA A TOOLBAR COMO A ACTIONBAR DA ACTIVITY (RESOLVE O ERRO FATAL)
+        setSupportActionBar(toolbar)
+
         val navView = binding.navView
 
         val navHostFragment = supportFragmentManager
@@ -32,14 +38,13 @@ class MainActivity : AppCompatActivity() {
 
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_home,
-                R.id.navigation_dashboard,
                 R.id.navigation_notifications,
                 R.id.navigation_profile,
                 R.id.nav_tarefas
             )
         )
 
+        // Esta chamada agora funcionará porque setSupportActionBar foi chamado antes.
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
     }
