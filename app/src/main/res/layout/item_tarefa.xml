@@ -57,9 +57,8 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/text_tarefa_data"
             app:layout_constraintVertical_chainStyle="packed"
-            android:ellipsize="end"
-            android:maxLines="2"
-            tools:text="Exemplo de descrição da tarefa"/>
+
+            tools:text="Exemplo de descrição da tarefa, que agora pode ter um texto muito longo e irá expandir o item da lista para mostrar todo o conteúdo sem ser cortado."/>
 
         <TextView
             android:id="@+id/text_tarefa_data"

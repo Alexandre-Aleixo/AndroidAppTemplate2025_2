@@ -22,17 +22,38 @@ class DeadlineNotificationWorker(
         // Recebe os dados da tarefa que foram passados no agendamento
         val taskId = inputData.getString("TASK_ID") ?: return Result.failure()
         val taskTitle = inputData.getString("TASK_TITLE") ?: return Result.failure()
+        // NOVO: Recebe o tipo de notificação agendada
+        val notificationType = inputData.getString("NOTIFICATION_TYPE") ?: return Result.failure()
 
         val notificationManager = NotificationManagerCompat.from(applicationContext)
         // Usa o hash do ID da tarefa como ID único da notificação
         val notificationId = taskId.hashCode()
 
-        // Use NotificationHelper.CHANNEL_ID para resolver a referência
+        // ####################################################################
+        // LÓGICA DE MENSAGEM DINÂMICA
+        // ####################################################################
+        val (title, text, icon) = when (notificationType) {
+            "APPROACHING" -> Triple(
+                "Prazo Final Próximo! 🚨",
+                "A tarefa '$taskTitle' tem apenas 1 hora restante para o prazo!",
+                NotificationCompat.PRIORITY_HIGH
+            )
+            "DEADLINE_MISSED" -> Triple(
+                "Prazo Finalizado! 🔔",
+                "O prazo da tarefa '$taskTitle' expirou. Verifique o status.",
+                NotificationCompat.PRIORITY_DEFAULT
+            )
+            else -> return Result.failure() // Tipo desconhecido
+        }
+        // ####################################################################
+
+
+        // Usa NotificationHelper.CHANNEL_ID para resolver a referência
         val builder = NotificationCompat.Builder(applicationContext, NotificationHelper.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notifications_black_24dp) // Use um ícone adequado
-            .setContentTitle("Prazo Final Próximo! 🚨")
-            .setContentText("A tarefa '$taskTitle' tem o prazo final em breve.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(icon) // Usa a prioridade definida na lógica
             .setAutoCancel(true)
 
         notificationManager.notify(notificationId, builder.build())
