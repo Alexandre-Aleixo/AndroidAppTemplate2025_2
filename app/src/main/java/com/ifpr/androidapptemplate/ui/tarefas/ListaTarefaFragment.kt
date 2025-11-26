@@ -1,5 +1,6 @@
 package com.ifpr.androidapptemplate.ui.tarefas
 
+import android.content.Context // NOVA IMPORTAÇÃO
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -19,6 +20,9 @@ import com.ifpr.androidapptemplate.baseclasses.Tarefa
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import android.widget.LinearLayout
+
+// É essencial que TarefaAcoesListener esteja definido em algum lugar,
+// com a assinatura: fun onStatusAlterado(context: Context, tarefa: Tarefa, estaConcluida: Boolean)
 
 class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
 
@@ -85,8 +89,14 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
         }
     }
 
-    override fun onStatusAlterado(tarefa: Tarefa, estaConcluida: Boolean) {
-        viewModel.atualizarStatusTarefa(tarefa, estaConcluida)
+    // CORRIGIDO: Implementação do método abstrato da interface com Context
+    override fun onStatusAlterado(context: Context, tarefa: Tarefa, estaConcluida: Boolean) {
+        viewModel.atualizarStatusTarefa(context, tarefa, estaConcluida)
+    }
+
+    // Método que deve ser adicionado/existir para lidar com exclusão
+    override fun onDeletarTarefa(tarefa: Tarefa) {
+        viewModel.deletarTarefa(requireContext(), tarefa)
     }
 
     private fun mostrarMenuOrdenacao(view: View) {
@@ -126,14 +136,21 @@ class ListaTarefaFragment : Fragment(), TarefaAcoesListener {
                 val position = viewHolder.adapterPosition
                 val tarefaParaDeletar = tarefaAdapter.listaTarefas[position]
 
-                viewModel.deletarTarefa(tarefaParaDeletar)
+                // CORRIGIDO: Passando o Context para deletarTarefa
+                viewModel.deletarTarefa(requireContext(), tarefaParaDeletar)
 
                 Snackbar.make(
                     requireView(),
                     "Tarefa '${tarefaParaDeletar.descricao}' removida.",
                     Snackbar.LENGTH_LONG
                 ).setAction("DESFAZER") {
-                    viewModel.adicionarTarefa(tarefaParaDeletar.descricao, tarefaParaDeletar.iconeResId)
+                    // CORRIGIDO: Passando o Context e o 'prazo' para adicionarTarefa
+                    viewModel.adicionarTarefa(
+                        requireContext(),
+                        tarefaParaDeletar.descricao,
+                        tarefaParaDeletar.iconeResId,
+                        tarefaParaDeletar.prazo
+                    )
                 }.show()
             }
 

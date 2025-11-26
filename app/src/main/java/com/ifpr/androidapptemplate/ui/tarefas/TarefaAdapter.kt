@@ -46,11 +46,15 @@ class TarefaAdapter(
         holder.data.text = "Criada em ${tarefaAtual.dataCriacao.formatarDataCriacao()}"
 
         // NOVO: Exibir Prazo
-        if (tarefaAtual.prazo != null) {
-            holder.prazoView.text = "Prazo: ${tarefaAtual.prazo.formatarPrazoParaExibicao()}"
+        // Cria uma variável local imutável para contornar o erro de Smart Cast
+        val prazoLocal = tarefaAtual.prazo
+
+        if (prazoLocal != null) {
+            holder.prazoView.text = "Prazo: ${prazoLocal.formatarPrazoParaExibicao()}"
             holder.prazoView.visibility = View.VISIBLE
-            // NOVO: Define cor de alerta se estiver perto/vencido (lógica simples)
-            if (!tarefaAtual.concluida && tarefaAtual.prazo < System.currentTimeMillis()) {
+
+            // Agora, usamos 'prazoLocal' que o compilador sabe ser um Long não nulo
+            if (!tarefaAtual.concluida && prazoLocal < System.currentTimeMillis()) {
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.red_delete))
             } else {
                 holder.prazoView.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.gray_dark))
@@ -75,7 +79,8 @@ class TarefaAdapter(
 
         holder.checkboxConcluida.setOnCheckedChangeListener { _, estaConcluida ->
             holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
-            listener.onStatusAlterado(tarefaAtual, estaConcluida)
+            // CORRIGIDO: Passando o Context do item da view
+            listener.onStatusAlterado(holder.itemView.context, tarefaAtual, estaConcluida)
         }
 
         holder.itemView.setOnClickListener {

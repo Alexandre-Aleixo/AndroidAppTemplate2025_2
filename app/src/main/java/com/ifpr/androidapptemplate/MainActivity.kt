@@ -7,6 +7,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.ifpr.androidapptemplate.databinding.ActivityMainBinding
+import com.ifpr.androidapptemplate.utils.createNotificationChannel // IMPORTAÇÃO NECESSÁRIA
 
 class MainActivity : AppCompatActivity() {
 
@@ -14,6 +15,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inicializa o Canal de Notificação
+        createNotificationChannel(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

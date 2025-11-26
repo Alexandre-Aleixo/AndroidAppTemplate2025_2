@@ -158,11 +158,12 @@ class AdicionarTarefaDialogFragment : DialogFragment() {
                     iconeResId = iconeSelecionadoResId,
                     prazo = prazoSelecionado
                 )
-                viewModel.atualizarDescricaoTarefa(tarefaAtualizada)
+                // AQUI: Adiciona requireContext()
+                viewModel.atualizarDescricaoTarefa(requireContext(), tarefaAtualizada)
                 Toast.makeText(context, "Tarefa atualizada!", Toast.LENGTH_SHORT).show()
             } else {
-                // MODO CRIAÇÃO: Adiciona nova tarefa, incluindo o prazo
-                viewModel.adicionarTarefa(descricao, iconeSelecionadoResId, prazoSelecionado)
+                // AQUI: Adiciona requireContext()
+                viewModel.adicionarTarefa(requireContext(), descricao, iconeSelecionadoResId, prazoSelecionado)
                 Toast.makeText(context, "Tarefa adicionada!", Toast.LENGTH_SHORT).show()
             }
             dismiss()
