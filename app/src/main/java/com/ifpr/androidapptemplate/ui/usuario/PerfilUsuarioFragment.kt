@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -23,38 +24,42 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.ifpr.androidapptemplate.R
 import com.ifpr.androidapptemplate.baseclasses.Usuario
-import com.ifpr.androidapptemplate.databinding.FragmentPerfilUsuarioBinding
+
+// Importações necessárias para Base64 e Imagem:
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
+import java.io.ByteArrayOutputStream
+
+// Removida: import com.google.firebase.storage.FirebaseStorage
 
 class PerfilUsuarioFragment : Fragment() {
 
-    private var _binding: FragmentPerfilUsuarioBinding? = null
-
-    // Removida: private lateinit var registerProfissaoEditText: EditText
-
+    // ... (Variáveis de inicialização)
     private lateinit var userProfileImageView: ImageView
     private lateinit var registerNameEditText: EditText
     private lateinit var registerEmailEditText: EditText
     private lateinit var registerEnderecoEditText: EditText
     private lateinit var registerPasswordEditText: EditText
     private lateinit var registerConfirmPasswordEditText: EditText
+    private lateinit var inputLayoutSenha: TextInputLayout
+    private lateinit var inputLayoutConfirmarSenha: TextInputLayout
     private lateinit var registerButton: Button
     private lateinit var sairButton: Button
+    private lateinit var changePhotoButton: View // O botão da câmera
     private lateinit var usersReference: DatabaseReference
     private lateinit var auth: FirebaseAuth
 
+    // Variável para armazenar a imagem Base64 atual ou nova
+    private var currentBase64Image: String? = null
 
-    // Este launcher lida com a seleção da imagem da galeria
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            // Define a imagem no ImageView
             userProfileImageView.setImageURI(it)
-            // Aqui, você deve chamar uma função para UPLOAD/SALVAR a nova URL da foto no Firebase
-            uploadNewPhoto(it)
+            // CHAMA A CONVERSÃO BASE64 E ATUALIZA A VARIÁVEL
+            currentBase64Image = uriToBase64(it)
         }
     }
-
-
-    private val binding get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,126 +67,108 @@ class PerfilUsuarioFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_perfil_usuario, container, false)
-
-        // Inicializa o Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        // 1. Inicialização de Views (igual a antes)
         userProfileImageView = view.findViewById(R.id.userProfileImageView)
         registerNameEditText = view.findViewById(R.id.registerNameEditText)
         registerEmailEditText = view.findViewById(R.id.registerEmailEditText)
         registerEnderecoEditText = view.findViewById(R.id.registerEnderecoEditText)
-        // Linha Removida: registerProfissaoEditText = view.findViewById(R.id.registerProfissaoEditText)
         registerPasswordEditText = view.findViewById(R.id.registerPasswordEditText)
         registerConfirmPasswordEditText = view.findViewById(R.id.registerConfirmPasswordEditText)
+        inputLayoutSenha = view.findViewById(R.id.input_layout_senha)
+        inputLayoutConfirmarSenha = view.findViewById(R.id.input_layout_confirmar_senha)
         registerButton = view.findViewById(R.id.salvarButton)
         sairButton = view.findViewById(R.id.sairButton)
+        changePhotoButton = view.findViewById(R.id.changePhotoButton)
 
         try {
             usersReference = FirebaseDatabase.getInstance().getReference("users")
         } catch (e: Exception) {
-            Log.e("DatabaseReference", "Erro ao obter referência para o Firebase DatabaseReference", e)
-            Toast.makeText(context, "Erro ao acessar o Firebase DatabaseReference", Toast.LENGTH_SHORT).show()
+            Log.e("DatabaseReference", "Erro ao obter referência", e)
         }
 
-        // Acessar currentUser
         val user = auth.currentUser
 
         if (user != null) {
             sairButton.visibility = View.VISIBLE
-            registerPasswordEditText.visibility = View.GONE
-            registerConfirmPasswordEditText.visibility = View.GONE
+            inputLayoutSenha.visibility = View.GONE
+            inputLayoutConfirmarSenha.visibility = View.GONE
             registerEmailEditText.isEnabled = false
         }
 
-        user?.let {
-            // Exibe a foto do perfil usando a biblioteca Glide
-            it.photoUrl?.let { photoUri ->
-                Glide.with(this).load(photoUri).into(userProfileImageView)
-            } ?: run {
-                // Se não houver foto, carrega o ícone padrão
-                userProfileImageView.setImageResource(R.drawable.ic_person)
-            }
-        }
+        // A foto não será mais carregada do Auth.photoUrl, mas sim do Database.
 
-        registerButton.setOnClickListener {
-            updateUser()
-        }
-
-        sairButton.setOnClickListener {
-            signOut()
-        }
-
-        // NOVO: Adiciona o listener para a foto de perfil
-        userProfileImageView.setOnClickListener {
-            selectImageLauncher.launch("image/*") // Abre a galeria de imagens
-        }
+        // 4. Listeners
+        registerButton.setOnClickListener { updateUser() }
+        sairButton.setOnClickListener { signOut() }
+        changePhotoButton.setOnClickListener { selectImageLauncher.launch("image/*") }
 
         return view
     }
 
-    private fun signOut() {
-        auth.signOut()
-        Toast.makeText(
-            context,
-            "Logout realizado com sucesso!",
-            Toast.LENGTH_SHORT
-        ).show()
-
-        // Redireciona para a tela de Login ou finaliza a Activity principal
-        requireActivity().finish()
-    }
-
-    // NOVO: Função de placeholder para upload de foto (Requer Firebase Storage)
-    private fun uploadNewPhoto(imageUri: Uri) {
-        // **ATENÇÃO:** Para completar este código, você precisará implementar o Firebase Storage.
-        // 1. Obter a referência do Storage.
-        // 2. Criar um nome de arquivo (ex: UserID + timestamp).
-        // 3. Fazer o upload do 'imageUri'.
-        // 4. No sucesso do upload, obter a 'downloadUrl'.
-        // 5. Chamar 'updatePhotoUrl(downloadUrl)'.
-
-        Toast.makeText(context, "Funcionalidade de Upload de Foto Pendente (Requer Firebase Storage)", Toast.LENGTH_LONG).show()
-    }
-
-    // NOVO: Função para atualizar a URL da foto no Firebase Auth
-    private fun updatePhotoUrl(photoUrl: String) {
-        val user = auth.currentUser
-        val profileUpdates = UserProfileChangeRequest.Builder()
-            .setPhotoUri(Uri.parse(photoUrl))
-            .build()
-
-        user?.updateProfile(profileUpdates)
-            ?.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Toast.makeText(context, "Foto de perfil atualizada com sucesso!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Falha ao atualizar a foto de perfil.", Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
-
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Exibe os dados do usuario logado, se disponivel
-
-        // Acessar currentUser
         var userFirebase = auth.currentUser
         if(userFirebase != null){
             registerNameEditText.setText(userFirebase.displayName)
             registerEmailEditText.setText(userFirebase.email)
-
+            // Carrega dados e a imagem Base64
             recuperarDadosUsuario(userFirebase.uid)
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    //---------------------------------------------------------
+    // FUNÇÕES DE IMAGEM BASE64
+    //---------------------------------------------------------
+
+    // Converte Uri da imagem para String Base64
+    private fun uriToBase64(uri: Uri): String? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (bytes != null) {
+                // Decodifica para Bitmap e comprime para economizar espaço no DB (50 = qualidade)
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+
+                Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("Base64Converter", "Erro ao converter Uri para Base64: ${e.message}")
+            null
+        }
     }
 
+    // Função auxiliar para exibir o Base64 (usada em recuperarDadosUsuario)
+    private fun displayBase64Image(base64: String?) {
+        if (base64 != null && base64.isNotEmpty()) {
+            try {
+                val decodedString = Base64.decode(base64, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+                userProfileImageView.setImageBitmap(bitmap)
+            } catch (e: Exception) {
+                Log.e("DisplayImage", "Erro ao decodificar Base64: ${e.message}")
+                userProfileImageView.setImageResource(R.drawable.ic_person)
+            }
+        } else {
+            userProfileImageView.setImageResource(R.drawable.ic_person)
+        }
+    }
 
+    // A função 'uploadNewPhoto' não é mais necessária, o trabalho é feito no selectImageLauncher.
+
+    //---------------------------------------------------------
+    // FUNÇÕES DE DADOS (AJUSTADAS PARA BASE64)
+    //---------------------------------------------------------
+
+    // 6. Carregamento do Endereço E IMAGEM (Firebase Database)
     fun recuperarDadosUsuario(usuarioKey: String) {
         val databaseReference = FirebaseDatabase.getInstance().getReference("users")
 
@@ -192,7 +179,10 @@ class PerfilUsuarioFragment : Fragment() {
                     val usuario = snapshot.getValue(Usuario::class.java)
                     usuario?.let {
                         registerEnderecoEditText.setText(it.endereco ?: "")
-                        // Linha Removida: registerProfissaoEditText.setText(it.profissao ?: "")
+
+                        // NOVO: Armazena a Base64 lida e exibe a imagem
+                        currentBase64Image = it.base64Image // Guarda a imagem lida
+                        displayBase64Image(currentBase64Image)
                     }
                 }
             }
@@ -203,61 +193,55 @@ class PerfilUsuarioFragment : Fragment() {
         })
     }
 
+    // 7. Atualização do Perfil
     private fun updateUser() {
         val name = registerNameEditText.text.toString().trim()
         val endereco = registerEnderecoEditText.text.toString().trim()
-        // Linha Removida: val profissao = registerProfissaoEditText.text.toString().trim()
-
-
-        // Acessar currentUser
         val user = auth.currentUser
 
-        // Verifica se o usuário atual já está definido
         if (user != null) {
-            // Se o usuário já existe, atualiza os dados
-            updateProfile(user, name, endereco /*, profissao*/)
+            // AQUI GARANTIMOS QUE A IMAGEM ATUAL (OU NOVA) É SALVA
+            val usuario = Usuario(user.uid, name, user.email, endereco, currentBase64Image)
+            saveUserToDatabase(usuario)
         } else {
             Toast.makeText(context, "Não foi possível encontrar o usuário logado", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun updateProfile(user: FirebaseUser?, displayName: String, endereco: String) { // Profissão removida
-        val profileUpdates = UserProfileChangeRequest.Builder()
-            .setDisplayName(displayName)
-            .build()
-
-        // Profissão removida do construtor Usuario
-        val usuario = Usuario(user?.uid.toString() , displayName, user?.email, endereco)
-
-        user?.updateProfile(profileUpdates)
-            ?.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    saveUserToDatabase(usuario)
-                    Toast.makeText(context, "Nome do usuario alterado com sucesso.",
-                        Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Não foi possivel alterar o nome do usuario.",
-                        Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
+    // Função 'updateProfile' e 'updatePhotoUrl' não são mais necessárias, pois o nome não é atualizado no Auth.
 
     private fun saveUserToDatabase(usuario: Usuario) {
         if (usuario.key != null) {
-            // **ATENÇÃO:** O construtor de 'Usuario' em 'baseclasses/Usuario.kt' provavelmente precisa ser atualizado
-            // para não exigir o campo 'profissao' se ele foi removido permanentemente.
+            // Apenas o nome do display será atualizado no Auth, o restante (Endereço e Base64) vai para o DB.
+            val profileUpdates = UserProfileChangeRequest.Builder()
+                .setDisplayName(usuario.nome)
+                .build()
 
-            usersReference.child(usuario.key.toString()).setValue(usuario)
-                .addOnSuccessListener {
-                    Toast.makeText(context, "Usuario atualizado com sucesso!", Toast.LENGTH_SHORT)
-                        .show()
-                    requireActivity().supportFragmentManager.popBackStack()
-                }
-                .addOnFailureListener {
-                    Toast.makeText(context, "Falha ao atualizar o usuario", Toast.LENGTH_SHORT).show()
+            auth.currentUser?.updateProfile(profileUpdates)
+                ?.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        // Salva os dados (incluindo o Base64) no Realtime Database
+                        usersReference.child(usuario.key.toString()).setValue(usuario)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Perfil atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                requireActivity().supportFragmentManager.popBackStack()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Falha ao atualizar o usuário no Database", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Falha ao atualizar o nome do usuário no Auth", Toast.LENGTH_SHORT).show()
+                    }
                 }
         } else {
-            Toast.makeText(context, "ID invalido", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "ID inválido", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // ... (signOut permanece o mesmo)
+    private fun signOut() {
+        auth.signOut()
+        Toast.makeText(context, "Logout realizado com sucesso!", Toast.LENGTH_SHORT).show()
+        requireActivity().finish()
     }
 }
